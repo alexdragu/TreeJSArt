@@ -16,6 +16,49 @@
 		<b>O</b> orthographic <b>P</b> perspective <b>H</b> hide title <b>
 		</div>
 
+		<script type="x-shader/x-vertex" id="vertexshader">
+
+			attribute float size;
+			attribute vec3 right_friend;
+
+			varying vec3 vColor;
+			varying vec3 vRightFriend;
+
+			void main() {
+
+				vColor = color;
+				vRightFriend = right_friend;
+
+				vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+
+				gl_PointSize = 1.0 * size * ( 300.0 / -mvPosition.z );
+
+				gl_Position = projectionMatrix * mvPosition;
+
+			}
+
+		</script>
+
+		<script type="x-shader/x-fragment" id="fragmentshader">
+
+			uniform sampler2D pointTexture;
+
+			varying vec3 vColor;
+			varying vec3 vRightFriend;
+
+			void main() {
+
+				gl_FragColor = vec4( vColor*0.5, 1.0 ) + vec4(vRightFriend*0.5, 0.1);
+				gl_FragColor = gl_FragColor * texture2D( pointTexture, gl_PointCoord );
+				//gl_FragColor = gl_FragColor * (1.0-texture2D( pointTexture, gl_PointCoord )) * 1.0/(gl_PointCoord.y * gl_PointCoord.y);
+				//gl_FragColor = gl_FragColor * (((-0.5+gl_PointCoord.x)*(-0.5+gl_PointCoord.x) + (-0.5+gl_PointCoord.y)*(-0.5+gl_PointCoord.y)))/1.0 ;
+				//gl_FragColor = gl_FragColor * (((-0.5+gl_PointCoord.x)*(-0.5+gl_PointCoord.x) + (-0.5+gl_PointCoord.y)*(-0.5+gl_PointCoord.y)))/1.0 + vec4(vRightFriend*0.5, 1.0);
+				//gl_FragColor = gl_FragColor * (((-0.5+gl_PointCoord.x)*(-0.5+gl_PointCoord.x) + (-0.5+gl_PointCoord.y)*(-0.5+gl_PointCoord.y)))/1.0 + vec4(vRightFriend*0.5, 0.1);
+
+			}
+
+		</script>
+
 		<script type="importmap">
 			{
 				"imports": {
@@ -77,7 +120,7 @@
 
 			// the sphere
 			function init() {
-
+				console.log ("v 0.1");
 				hdiv = document.getElementById("info");
 				
 				container = document.createElement( 'div' );
@@ -462,8 +505,8 @@
 				cameraRig.lookAt( mesh3.position );
 				
 				//renderer.autoClear = false;
-				//renderer.clear(false,true,true);
 				renderer.clear(true,false,true);
+				//renderer.clear(true,true,true);
 
 				controls.update();
 

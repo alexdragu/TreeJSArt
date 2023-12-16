@@ -57,6 +57,8 @@ class LbMap {
 	defIndexfi = 0;
 	defIndextheta = 0;
 	prjMapData;
+	uniforms;
+	shaderMaterial;
 
 	// 
 	autofit = false;
@@ -99,6 +101,23 @@ class LbMap {
 		console.log(this.mapCoords);
 		console.log(this.defIndexv);
 
+		this.uniforms = {
+			pointTexture: { value: new THREE.TextureLoader().load( 'textures/sprites/spark1.png' ) }
+		};
+
+		this.shaderMaterial = new THREE.ShaderMaterial( {
+
+			uniforms: this.uniforms,
+			vertexShader: document.getElementById( 'vertexshader' ).textContent,
+			fragmentShader: document.getElementById( 'fragmentshader' ).textContent,
+
+			blending: THREE.AdditiveBlending,
+			depthTest: false,
+			transparent: true,
+			vertexColors: true
+
+		} );
+
 		this.factory();
 
 		this.loadRandomMap();
@@ -109,11 +128,13 @@ class LbMap {
 		this.particles = this.generateMap();
 		this.regeneratemap()
 
+
 		this.square_group = this.generateWindows();
 
 		/////----------
 		this.object.add( this.particles );
 		this.object.add( this.square_group );
+
 	}
 
 	regeneratemap(){
@@ -153,16 +174,20 @@ class LbMap {
 	generateProjectionMap(){	
 		const pointsMap = [];
 		const geometryMap = new THREE.BufferGeometry();
+		const colors = [];
+		const sizes = [];
+		const right_friend = [];
+		const color = new THREE.Color();
+		let rfcolor;
+		
+		
 		const amp = this.prjMapData.amp;
 		const map_square_size_x = this.prjMapData.square_size_y;
 		const map_square_size_y = this.prjMapData.square_size_x;	
 		
 		const ratio_x = this.out_scr_w/(map_square_size_x * this.prjMapData.x);
 		const ratio_y = this.out_scr_h/(map_square_size_y * this.prjMapData.y);
-		
-		console.log(ratio_x);
-		console.log(ratio_y);
-
+				
 		for ( var j = 0; j < this.mapCoords.length; j++ ) {	
 			for (var kx=0;kx<this.prjMapData.x;kx++){
 				for (var ky=0;ky<this.prjMapData.y;ky++){
@@ -186,7 +211,16 @@ class LbMap {
 						const vdest = new THREE.Vector3(
 							amp * ratio_x * (vec.x + map_square_size_x*kx) , 
 							amp * ratio_y * (vec.y - map_square_size_y*ky) ,
-							vec.z );						
+							vec.z );		
+
+						rfcolor = color;
+						color.setHSL( j / this.mapCoords.length, 1.0, 0.5 );
+						
+						right_friend.push( rfcolor.r,kx, ky );
+
+						colors.push( color.r, color.g, color.b );		
+						sizes.push( 10 );						
+
  						pointsMap.push (vdest);
 					}
 
@@ -196,7 +230,12 @@ class LbMap {
 		}		
 
 		geometryMap.setFromPoints( pointsMap );
-		return new THREE.Points( geometryMap, new THREE.PointsMaterial( { color: 0x00AAAA } ) );
+		geometryMap.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
+		geometryMap.setAttribute( 'right_friend', new THREE.Float32BufferAttribute( right_friend, 3 ).setUsage( THREE.DynamicDrawUsage ) );
+		geometryMap.setAttribute( 'size', new THREE.Float32BufferAttribute( sizes, 1 ).setUsage( THREE.DynamicDrawUsage ) );
+		console.log("Vertices : " + geometryMap.attributes.position.count);
+		//return new THREE.Points( geometryMap, new THREE.PointsMaterial( { color: 0x00AAAA } ) );
+		return new THREE.Points( geometryMap, this.shaderMaterial );
 	}
 
 	updateMap(){
