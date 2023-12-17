@@ -79,6 +79,7 @@
 			import { VertexNormalsHelper } from 'three/addons/helpers/VertexNormalsHelper.js';
 			import { VertexTangentsHelper } from 'three/addons/helpers/VertexTangentsHelper.js';
 			import { LbMap } from 'three/lexblue/LbMap.js';
+			import { AttributeGenerator } from 'three/lexblue/AttributeGenerator.js';
 
 			let SCREEN_WIDTH = window.innerWidth;
 			let SCREEN_HEIGHT = window.innerHeight;
@@ -104,6 +105,7 @@
 			let gui;
 
 			let show_camhelper = true;
+			let go_auto = false;
 			let camera_update = false;
 
 			let lbMap;
@@ -115,12 +117,28 @@
 			let hdiv; // title
 			let statspanel;
 
+			// Randomizer
+			const attributes = [
+				{ name: 'winxcnt', range: [1, 30], variation: 1 , continuous: false},
+				{ name: 'winycnt', range: [1, 30], variation: 1 , continuous: false},
+				{ name: 'fact', range: [0.5, 1.0], variation: 0.01 , continuous: true},
+				{ name: 'defIndexfi', range: [Math.PI/R, 2*Math.PI], variation: Math.PI/(2*R) , continuous: true},
+				{ name: 'defIndextheta', range: [Math.PI/R, 2*Math.PI], variation: Math.PI/(2*R) , continuous: true}
+			];
+
+			let generator;
+			let randomSet;
+			let lastRenderTime;
+
 			init();
 			animate();
 
+			
+
 			// the sphere
 			function init() {
-				console.log ("v 0.1");
+				lastRenderTime = performance.now();
+				console.log ("v 0.2");
 				hdiv = document.getElementById("info");
 				
 				container = document.createElement( 'div' );
@@ -180,8 +198,7 @@
 
 				lbMap = new LbMap(mesh, R,2*Math.PI/15,2*Math.PI/15,0.3*R,0.3*R,5,10,1.1,1, Math.PI, Math.PI);
 				lbMap.setScrSize(-0.5 * frustumSize * aspect , frustumSize );
-				lbMap.init();
-				
+				lbMap.init();							
 
 				cameraRig.add( lbMap.particlesMap );
 
@@ -202,13 +219,18 @@
 				window.addEventListener( 'resize', onWindowResize );
 				document.addEventListener( 'keydown', onKeyDown );
 
-				controls = new TrackballControls( camera,  renderer.domElement);  //
-
-				//lbMap.updateMap();
+				controls = new TrackballControls( camera,  renderer.domElement);  //				
 
 				gui = setupGui();
 
-				//hdiv.appendChild(stats.dom);
+				lbMap.factory();
+				ReGenerateMap(true);
+
+				// prepare the generator
+				generator = new AttributeGenerator(attributes,lbMap);
+				randomSet = generator.generateRandomSet();
+
+				console.log(randomSet);							
 				
 
 			}
@@ -221,7 +243,8 @@
 					autofit: lbMap.autofit,
 					nonblinn: false,
 					newShading: 'glossy',
-					show_camhelper: true,					
+					show_camhelper: show_camhelper,
+					go_auto: go_auto,				
 					winSizeW: lbMap.window_w,
 					winSizeH: lbMap.window_h,
 					hstep: lbMap.Hstep,
@@ -245,6 +268,7 @@
 				gui.add( effectController, 'newShading', [ 'wireframe', 'flat', 'smooth', 'glossy', 'textured', 'reflective' ] ).name( 'Shading' ).onChange( render );
 
 				gui.add( effectController, 'show_camhelper' ).name( 'Cam Helper' ).onChange( render );
+				gui.add( effectController, 'go_auto' ).name( 'Auto Move' ).onChange( render );
 
 				gui.add( effectController, 'winSizeW', 1, 2*R ).name('Window Size X').step( 1 ).listen().onChange( render );
 				gui.add( effectController, 'winSizeH', 1, 2*R ).name('Window Size y').step( 1 ).listen().onChange( render );
@@ -252,11 +276,11 @@
 				gui.add( effectController, 'hstep', Math.PI/(3*180), Math.PI/2 ).name('Phi Step').step( Math.PI/(3*180) ).listen().onChange( render );
 				gui.add( effectController, 'vstep', Math.PI/(3*180), Math.PI/2 ).name('Theta Step').step( Math.PI/(3*180) ).listen().onChange( render );		
 				
-				gui.add( effectController, 'winxcnt', 1, R ).name('Win Cnt X').step( 1 ).onChange( render );
-				gui.add( effectController, 'winycnt', 1, R ).name('Win Cnt y').step( 1 ).onChange( render );
+				gui.add( effectController, 'winxcnt', 1, R ).name('Win Cnt X').step( 1 ).listen().onChange( render );
+				gui.add( effectController, 'winycnt', 1, R ).name('Win Cnt y').step( 1 ).listen().onChange( render );
 
-				gui.add( effectController, 'fact', 0.5, 2 ).name('Window Factor (gap)').step( 0.1 ).onChange( render );
-				gui.add( effectController, 'mag', 1, 10 ).name('Generic Mag').step( 0.5 ).onChange( render );				
+				gui.add( effectController, 'fact', 0.5, 2 ).name('Window Factor (gap)').step( 0.01 ).listen().onChange( render );
+				gui.add( effectController, 'mag', 1, 10 ).name('Generic Mag').step( 0.5 ).listen().onChange( render );				
 
 				gui.add( effectController, 'phi_cover', 2*Math.PI/R, 2*Math.PI ).name('Phi Cover').step( 2*Math.PI/R ).listen().onChange( render );
 				gui.add( effectController, 'theta_cover', 2*Math.PI/R, 2*Math.PI ).name('Theta Cover').step( 2*Math.PI/R ).listen().onChange( render );
@@ -270,16 +294,22 @@
 			// fi , theta, coords /in lat and longitude
 			// index id
 			// hmid, vmid - map sqluare pos	
-			function ReGenerateMap(){
+			function ReGenerateMap(regen){
 
-				lbMap.particlesMap.geometry.dispose();
-				cameraRig.remove( lbMap.particlesMap );
+				if (regen){
+					lbMap.particlesMap.geometry.dispose();
+					cameraRig.remove( lbMap.particlesMap );
+					lbMap.regeneratemap(regen);					
+					cameraRig.add( lbMap.particlesMap );
+				} else {
+					if (!lbMap.regeneratemap(regen)){				
+						console.log("Force regen Map");
+						ReGenerateMap(true);
+					}
+				}
+				
 
-				lbMap.regeneratemap();					
-
-				cameraRig.add( lbMap.particlesMap );
-
-				lbMap.regenerateSphereMap();
+				//lbMap.regenerateSphereMap();
 			}
 
 			//
@@ -289,37 +319,37 @@
 				switch ( event.keyCode ) {
 
 					case 79: /*O*/						
-						ReGenerateMap();
+						ReGenerateMap(false);
 						activeCamera = cameraOrtho;
 						activeHelper = cameraOrthoHelper;
 						break;
 					case 80: /*P*/
-						ReGenerateMap();
+						ReGenerateMap(false);
 						activeCamera = cameraPerspective;
 						activeHelper = cameraPerspectiveHelper;
 						break;
 					case 74: /*J*/
 						lbMap.defIndexv--;
 						//lbMap.updateMap();
-						ReGenerateMap();
+						ReGenerateMap(false);
 						//lbMap.updateWindows();
 						break;
 					case 85: /*U*/						
 						lbMap.defIndexv++;
 						//lbMap.updateMap();
-						ReGenerateMap();
+						ReGenerateMap(false);
 						//lbMap.updateWindows();
 						break;												
 					case 73: /*I*/						
 						lbMap.defIndexh++;
 						//lbMap.updateMap();
-						ReGenerateMap();
+						ReGenerateMap(false);
 						//lbMap.updateWindows();
 						break;						
 					case 75: /*K*/
 						lbMap.defIndexh--;
 						//lbMap.updateMap();
-						ReGenerateMap();
+						ReGenerateMap(false);
 						//lbMap.updateWindows();
 						break;
 					case 72: /*H*/						
@@ -335,7 +365,7 @@
 							statspanel.style.display = "none";							
 						}
 						break;
-					case 70:
+					case 70: /*F*/
 						cntrl = document.getElementById("bluecontrol");
 						if (cntrl.style.display === "none") {
 							cntrl.style.display = "block";
@@ -343,6 +373,23 @@
 							cntrl.style.display = "none";
 						}
 						break;
+					case 71: /*G*/
+						generator.generateRandomSet();
+						generator.setValuesToTarget();
+						updateEffectsController();
+						lbMap.factory();
+						console.log("Randomized " + lbMap.winxcnt + " " + lbMap.winycnt + " " + lbMap.fact);
+						ReGenerateMap(false);
+						break;
+
+					case 68: /*D*/
+						generator.step(100.0/60.0);
+						updateEffectsController();
+						lbMap.factory();
+						console.log("Randomized " + lbMap.winxcnt + " " + lbMap.winycnt + " " + lbMap.fact + " " + lbMap.defIndexfi + " " + lbMap.defIndextheta);
+						ReGenerateMap(false);
+						break;						
+
 				}
 				console.log(event.keyCode);
 
@@ -374,7 +421,7 @@
 				//lbMap.updateMap();
 				//lbMap.updateWindows();
 
-				ReGenerateMap();
+				ReGenerateMap(false);
 
 			}
 
@@ -392,9 +439,59 @@
 
 			}
 
+			function updateEffectsController(){
+				effectController.hstep = lbMap.Hstep;
+				effectController.vstep = lbMap.Vstep;
+				effectController.winSizeW = lbMap.window_w;
+				effectController.winSizeH = lbMap.window_h;
+				effectController.fact = lbMap.fact;
+				effectController.mag = lbMap.mag;
+				effectController.winxcnt = lbMap.winxcnt;
+				effectController.winycnt = lbMap.winycnt;
+				effectController.defIndexfi = lbMap.defIndexfi;
+				effectController.defIndextheta = lbMap.defIndextheta;				
+			}
+
 
 			function render() {
 
+				const currentRenderTime = performance.now();
+				const timeBetweenRenders = currentRenderTime - lastRenderTime;
+//				console.log(`Time between renders: ${timeBetweenRenders} ms`);
+				lastRenderTime = currentRenderTime;
+
+				if (effectController.go_auto != go_auto){
+					go_auto = effectController.go_auto;
+				}
+
+if (go_auto){
+				// The movement				
+				generator.step(timeBetweenRenders/60);				
+				updateEffectsController();
+
+				if (lbMap.autofit){
+							lbMap.window_w = lbMap.theta_cover*R/lbMap.winxcnt;
+							lbMap.window_h = lbMap.phi_cover*R/lbMap.winycnt;
+
+							lbMap.Vstep = lbMap.theta_cover/lbMap.winxcnt;
+							lbMap.Hstep = lbMap.phi_cover/lbMap.winycnt;
+
+
+							effectController.winSizeH = lbMap.window_h;
+							effectController.winSizeW = lbMap.window_w;
+
+							effectController.hstep = lbMap.Hstep;
+							effectController.vstep = lbMap.Vstep;
+
+							//gui.update();
+							console.log ("autofit");						
+
+				}
+
+				lbMap.factory();
+				console.log("Randomized " + lbMap.defIndexfi + " " + lbMap.defIndextheta + " " + lbMap.fact);
+				ReGenerateMap(false);
+}
 				const r = 0;
 
 				// control panel
@@ -414,7 +511,9 @@
 					effectController.defIndextheta != lbMap.defIndextheta
 
 					) {
-												
+								
+					generator.move();
+
 					lbMap.Hstep = effectController.hstep;
 					lbMap.Vstep = effectController.vstep;
 					lbMap.window_w = effectController.winSizeW;
@@ -459,10 +558,10 @@
 
 						}
 						lbMap.factory();
-						ReGenerateMap();
+						ReGenerateMap(false);
 					} else{
 						lbMap.factory();
-						ReGenerateMap();
+						ReGenerateMap(false);
 					}
 
 					//lbMap.updateMap();
@@ -505,7 +604,7 @@
 				cameraRig.lookAt( mesh3.position );
 				
 				//renderer.autoClear = false;
-				renderer.clear(true,false,true);
+				renderer.clear(true,true,true);
 				//renderer.clear(true,true,true);
 
 				controls.update();
