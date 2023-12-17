@@ -12,6 +12,8 @@
 		</style>
 	</head>
 	<body>
+		<canvas class="webgl"></canvas>
+
 		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a>  BL Map<br/>
 		<b>O</b> orthographic <b>P</b> perspective <b>H</b> hide title <b>
 		</div>
@@ -80,6 +82,8 @@
 			import { VertexTangentsHelper } from 'three/addons/helpers/VertexTangentsHelper.js';
 			import { LbMap } from 'three/lexblue/LbMap.js';
 			import { AttributeGenerator } from 'three/lexblue/AttributeGenerator.js';
+			
+			var canvas;
 
 			let SCREEN_WIDTH = window.innerWidth;
 			let SCREEN_HEIGHT = window.innerHeight;
@@ -107,6 +111,7 @@
 			let show_camhelper = true;
 			let go_auto = false;
 			let camera_update = false;
+			let hide_sphere = false;
 
 			let lbMap;
 			let autofit = false;
@@ -138,7 +143,7 @@
 			// the sphere
 			function init() {
 				lastRenderTime = performance.now();
-				console.log ("v 0.2");
+				console.log ("v 0.3");
 				hdiv = document.getElementById("info");
 				
 				container = document.createElement( 'div' );
@@ -202,7 +207,8 @@
 
 				cameraRig.add( lbMap.particlesMap );
 
-				renderer = new THREE.WebGLRenderer( { preserveDrawingBuffer: true , antialias: true } );
+				canvas = document.querySelector('.webgl');
+				renderer = new THREE.WebGLRenderer( {canvas, preserveDrawingBuffer: true , antialias: true } );
 				
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( SCREEN_WIDTH, SCREEN_HEIGHT );
@@ -218,6 +224,27 @@
 
 				window.addEventListener( 'resize', onWindowResize );
 				document.addEventListener( 'keydown', onKeyDown );
+
+				window.addEventListener('dblclick', () => {
+                const fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement
+
+                if (!fullscreenElement) {
+                    if (canvas.requestFullscreen) {
+                        canvas.requestFullscreen()
+                    }
+                    else if (canvas.webkitRequestFullscreen) {
+                        canvas.webkitRequestFullscreen()
+                    }
+                }
+                else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen()
+                    }
+                    else if (document.webkitExitFullscreen) {
+                        document.webkitExitFullscreen()
+                    }
+                }
+            })
 
 				controls = new TrackballControls( camera,  renderer.domElement);  //				
 
@@ -244,6 +271,7 @@
 					nonblinn: false,
 					newShading: 'glossy',
 					show_camhelper: show_camhelper,
+					hide_sphere: hide_sphere,
 					go_auto: go_auto,				
 					winSizeW: lbMap.window_w,
 					winSizeH: lbMap.window_h,
@@ -268,6 +296,7 @@
 				gui.add( effectController, 'newShading', [ 'wireframe', 'flat', 'smooth', 'glossy', 'textured', 'reflective' ] ).name( 'Shading' ).onChange( render );
 
 				gui.add( effectController, 'show_camhelper' ).name( 'Cam Helper' ).onChange( render );
+				gui.add( effectController, 'hide_sphere' ).name( 'Hide Sphere' ).onChange( render );
 				gui.add( effectController, 'go_auto' ).name( 'Auto Move' ).onChange( render );
 
 				gui.add( effectController, 'winSizeW', 1, 2*R ).name('Window Size X').step( 1 ).listen().onChange( render );
@@ -308,8 +337,8 @@
 					}
 				}
 				
-
-				//lbMap.regenerateSphereMap();
+				if (!hide_sphere)
+					lbMap.regenerateSphereMap();
 			}
 
 			//
@@ -462,6 +491,15 @@
 
 				if (effectController.go_auto != go_auto){
 					go_auto = effectController.go_auto;
+				}
+
+				if (effectController.hide_sphere != hide_sphere){
+					hide_sphere = effectController.hide_sphere;
+					if (hide_sphere){
+						cameraRig.remove( mesh );
+					} else {
+						cameraRig.add( mesh );
+					}
 				}
 
 if (go_auto){
