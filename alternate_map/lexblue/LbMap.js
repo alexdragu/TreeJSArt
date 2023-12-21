@@ -98,7 +98,7 @@ class LbMap {
 	}
 
 	factory () {
-		console.log("Factory " +this.winxcnt + " " + this.winycnt + " " + this.fact + " " + this.mag + " " + this.Hstep + " " + this.Vstep + " " + this.window_w + " " + this.window_h);
+		//console.log("Factory " +this.winxcnt + " " + this.winycnt + " " + this.fact + " " + this.mag + " " + this.Hstep + " " + this.Vstep + " " + this.window_w + " " + this.window_h);
 		this.prjMapData = new ProjectionMapData(this.winxcnt,this.winycnt,this.mag,this.window_w*this.fact,this.window_h*this.fact,
 			this.Hstep,this.Vstep,-this.window_w*this.winxcnt/2,this.window_h*this.winycnt/4, this.window_w,this.window_h);
 	}
@@ -106,6 +106,27 @@ class LbMap {
 	setScrSize(w, h){
 		this.out_scr_h = h;
 		this.out_scr_w = w;
+	}
+
+	parsePolygonCoords(polygonString) {
+		// Remove the "POLYGON " prefix and split the string into polygons
+		const polygons = polygonString.slice(8).split('), (');
+		// Map each polygon string to an array of MapCoords objects
+		const mapCoordsArrays = polygons.map(polygonString => {
+			// Remove the leading and trailing parentheses
+			const coordsString = polygonString.slice(2, -2);
+			// Split the coordinates string into an array of strings
+			const coordsArray = coordsString.split(',');
+			// Map each string to a MapCoords object
+			return coordsArray.map(coordString => {
+				const [x, y] = coordString.trim().split(' ').map(Number);
+				//return new MapCoord( x*(Math.PI)/180.0, y*(Math.PI)/(180.0));
+				return new MapCoord( x*(Math.PI)/180.0, y*(Math.PI)/(180.0));
+				//return new MapCoord( 0.0 * Math.PI/180 +x*(Math.PI)/180.0, y*(Math.PI)/(90.0));
+			});
+		});
+	  
+		return mapCoordsArrays;
 	}
 
 	init(){
@@ -129,29 +150,28 @@ class LbMap {
 			vertexColors: true
 
 		} );
+		
+		this.factory();		
+	}
 
-		this.factory();
+	initMapData(mapdata) {
+		const arrayOfMaps = [];
+		const newMapCoords = this.parsePolygonCoords(mapdata).flat();
+		//this.mapCoords = newMapCoords;
+		this.mapCoords = this.mapCoords.concat(newMapCoords);
+		// console.log(this.mapCoords);
+		this.object.remove(this.particles);
+		this.object.remove(this.square_group);
 
-		this.loadRandomMap();
-		this.loadFromRaw();
-
-//		this.particlesMap = this.generateProjectionMap();
-//		this.particlesMap.position.z = 150;		
 		this.particles = this.generateMap();
-		this.regeneratemap(true)
-
-
+		this.regeneratemap(true);
 		this.square_group = this.generateWindows();
 
-		/////----------
-		this.object.add( this.particles );
-		this.object.add( this.square_group );
-
+		this.object.add(this.particles);
+		this.object.add(this.square_group);
 	}
 
 	regeneratemap(regen){
-		console.log(regen);
-
 		if (!regen)
 			return this.generateProjectionMap(regen);
 		else{
@@ -160,7 +180,6 @@ class LbMap {
 			this.particlesMap.position.x = -this.out_scr_w/2;
 			this.particlesMap.position.y = this.out_scr_h/2;
 		}
-		
 	}
 
 	regenerateSphereMap(){
@@ -193,8 +212,8 @@ class LbMap {
 	generateProjectionMap(regen){	
 		
 		const amp = this.prjMapData.amp;
-		const map_square_size_x = this.prjMapData.square_size_y;
-		const map_square_size_y = this.prjMapData.square_size_x;	
+		const map_square_size_x = this.prjMapData.square_size_x;
+		const map_square_size_y = this.prjMapData.square_size_y;	
 		
 		const ratio_x = this.out_scr_w/(map_square_size_x * this.prjMapData.x);
 		const ratio_y = this.out_scr_h/(map_square_size_y * this.prjMapData.y);
@@ -222,23 +241,27 @@ class LbMap {
 		let vindex = 0;		
 
 		for ( var j = 0; j < this.mapCoords.length; j++ ) {	
+
+
 			for (var kx=0;kx<this.prjMapData.x;kx++){
 				for (var ky=0;ky<this.prjMapData.y;ky++){
 				
 					const fi = this.mapCoords[j].fi;
 					const theta = this.mapCoords[j].theta;
-					const x = this.defIndexh + kx;
-					const y = this.defIndexv + ky;
-					const vec = this.getMapSlice(fi + this.defIndexfi, theta + this.defIndextheta, x, y );
+					//const x = this.defIndexh + kx;
+					//const y = this.defIndexv + ky;
+					const x = kx;
+					const y = ky;					
+					const vec = this.getMapSlice(fi, theta, x, y );
 
 					if ((vec.x <= -this.prjMapData.window_w/2) || (vec.x >= this.prjMapData.window_w/2) || 
-						(vec.y <= -this.prjMapData.window_h/2) || (vec.y >= this.prjMapData.window_h/2)
+						(vec.y <= -this.prjMapData.window_h/2) || (vec.y >= this.prjMapData.window_h/2) || (vec.z<0)
 					){						
 					}else{
 						vec.z = 0;		
 						const vdest = new THREE.Vector3(
-							amp * ratio_x * (vec.x + map_square_size_x*kx) , 
-							amp * ratio_y * (vec.y - map_square_size_y*ky) ,
+							amp * ratio_x * (vec.x + map_square_size_x*ky + map_square_size_x/2.0) , 
+							amp * ratio_y * (-vec.y - map_square_size_y*kx - map_square_size_y/2.0) ,
 							vec.z );		
 
 						this.rfcolor = this.color;
@@ -259,7 +282,10 @@ class LbMap {
 						}else{
 							this.right_friend.push( this.rfcolor.r,kx, ky );
 							this.colors.push( this.color.r, this.color.g, this.color.b );		
-							this.sizes.push( j%30 );						
+							let x = j%(2*20);
+							if (x>30) x = (20 - x%20);
+							this.sizes.push( x + 5);
+							//this.sizes.push( 10);
 							this.pointsMap.push (vdest);
 							this.activeMapCoords.push (vindex,kx,ky,j);							
 						} 
@@ -282,8 +308,8 @@ class LbMap {
 			console.log("New Vertices : " + this.geometryMap.attributes.position.count);
 		}else{
 			
-			console.log("Total Vertices : " + this.geometryMap.attributes.position.count + "Required: " + vindex + 
-			" Compute cycle: " + this.prjMapData.y*this.prjMapData.x*this.mapCoords.length);
+			//console.log("Total Vertices : " + this.geometryMap.attributes.position.count + "Required: " + vindex + 
+			//" Compute cycle: " + this.prjMapData.y*this.prjMapData.x*this.mapCoords.length);
 			this.particlesMap.geometry.setDrawRange( 0, vindex )
 			positionAttribute.needsUpdate = true;
 			colorAttr.needsUpdate = true;
@@ -349,24 +375,74 @@ class LbMap {
 		var hstep = this.prjMapData.hstep;
 
 		// map 01
+/*		
+		var hshift_f = this.defIndexfi + hshift * hstep;
+		var vshift_f = this.defIndextheta + vshift * vstep;
+*/
 		var hshift_f = hshift * hstep;
 		var vshift_f = vshift * vstep;
 
-		var x = 102 * Math.sin(theta) * Math.cos(fi);
-		var y = 102 * Math.sin(theta) * Math.sin(fi);
-		var z = 102 * Math.cos(theta);
+		var x = 102 * Math.cos(theta) * Math.cos(fi);
+		var y = 102 * Math.cos(theta) * Math.sin(fi);
+		var z = 102 * Math.sin(theta);
 
 		var vec = new THREE.Vector3(x , y , z);
 
 		// should invert the order of rotation
 		var quaternion = new THREE.Quaternion();
-		quaternion.setFromAxisAngle( new THREE.Vector3( 0, 1, 0 ), hshift_f);
+/*		
+		quaternion.setFromAxisAngle( new THREE.Vector3( 0, 1, 0 ), vshift_f);
 		vec.applyQuaternion( quaternion );
 		
-		quaternion.setFromAxisAngle( new THREE.Vector3( 1, 0, 0 ), vshift_f);
+		quaternion.setFromAxisAngle( new THREE.Vector3( 1, 0, 0 ), hshift_f);
+		vec.applyQuaternion( quaternion );
+*/
+
+		quaternion.setFromAxisAngle( new THREE.Vector3( 0, 1, 0 ), vshift_f);
 		vec.applyQuaternion( quaternion );
 
+		quaternion.setFromAxisAngle( new THREE.Vector3( 1, 0, 0 ), hshift_f);
+		vec.applyQuaternion( quaternion );
+
+		quaternion.setFromAxisAngle( new THREE.Vector3( 0, 1, 0 ), this.defIndextheta);
+		vec.applyQuaternion( quaternion );
+
+		quaternion.setFromAxisAngle( new THREE.Vector3( 1, 0, 0 ), this.defIndexfi);
+		vec.applyQuaternion( quaternion );
+
+
 		//return new THREE.Vector3(vec.x , vec.y ,vec.z);
+		return vec;
+	}
+
+	
+	vecOnSphereRotate(x,y,z,hstep, vstep, i, j){						
+		var vec;
+		var quaternion = new THREE.Quaternion();
+
+		vec = new THREE.Vector3(x,y,z);
+/*		
+		quaternion.setFromAxisAngle( new THREE.Vector3( 0, 1, 0 ), this.defIndextheta+j*vstep);				
+		vec.applyQuaternion( quaternion );
+	
+		quaternion.setFromAxisAngle( new THREE.Vector3( -1, 0, 0 ), this.defIndexfi+i*hstep);		
+		vec.applyQuaternion( quaternion );							
+*/
+
+		// get the main shape
+		quaternion.setFromAxisAngle( new THREE.Vector3( 0, 1, 0 ), j*vstep - this.prjMapData.y*vstep/2.0 + vstep/2.0);
+		vec.applyQuaternion( quaternion );
+
+		quaternion.setFromAxisAngle( new THREE.Vector3( -1, 0, 0 ), i*hstep - this.prjMapData.x*hstep/2.0 + hstep/2.0 );		
+		vec.applyQuaternion( quaternion );							
+
+		// rotate the shape	
+		quaternion.setFromAxisAngle( new THREE.Vector3( 0, 1, 0 ), this.defIndextheta);				
+		vec.applyQuaternion( quaternion );
+	
+		quaternion.setFromAxisAngle( new THREE.Vector3( -1, 0, 0 ), this.defIndexfi);		
+		vec.applyQuaternion( quaternion );							
+
 		return vec;
 	}
 
@@ -414,20 +490,6 @@ class LbMap {
 		}				
 	}
 
-	vecOnSphereRotate(x,y,z,hstep, vstep, i, j){						
-		var vec;
-		var quaternion = new THREE.Quaternion();
-
-		vec = new THREE.Vector3(x,y,z);
-
-		quaternion.setFromAxisAngle( new THREE.Vector3( 0, 1, 0 ), this.defIndextheta+i*vstep);
-		vec.applyQuaternion( quaternion );
-
-		quaternion.setFromAxisAngle( new THREE.Vector3( 0, 0, 1 ), this.defIndexfi+j*hstep);
-		vec.applyQuaternion( quaternion );							
-
-		return vec;
-	}
 
 
 	generateSquare(i,j,vstep,hstep){		
@@ -456,6 +518,7 @@ class LbMap {
 		points.push (vec);
 
 		x = -this.prjMapData.window_w/2 ; y = this.prjMapData.window_h/2 ; z = Math.sqrt(R*R - x*x - y*y);
+		vec = this.vecOnSphereRotate(x,y,z,hstep,vstep,i,j);
 		points.push (vec);
 
 		geometry.setFromPoints( points );
@@ -475,7 +538,8 @@ class LbMap {
 
 		for (var i = 0;i < this.prjMapData.x; i++){
 			for (var j = 0;j < this.prjMapData.y; j++){
-				this.generateSquare(i,j,vstep,hstep)
+
+				this.generateSquare(i , j ,vstep,hstep);
 			}
 		}		
 
@@ -493,7 +557,7 @@ class LbMap {
 			var fi = THREE.MathUtils.randFloatSpread( Math.PI);
 			var theta = THREE.MathUtils.randFloatSpread( 2*Math.PI );
 
-			mapCoords.push(new MapCoord(fi,theta));								
+			this.mapCoords.push(new MapCoord(fi,theta));								
 		}				
 	}
 
@@ -529,13 +593,15 @@ class LbMap {
 
 		for ( var j = 0; j < this.mapCoords.length; j++ ) {	
 
-			var x = 102 * Math.sin(this.mapCoords[j].theta) * Math.cos(this.mapCoords[j].fi);
-			var y = 102 * Math.sin(this.mapCoords[j].theta) * Math.sin(this.mapCoords[j].fi);
-			var z = 102 * Math.cos(this.mapCoords[j].theta);
+			var x = this.R * Math.cos(this.mapCoords[j].theta) * Math.cos(this.mapCoords[j].fi);
+			var y = this.R * Math.cos(this.mapCoords[j].theta) * Math.sin(this.mapCoords[j].fi);
+			var z = this.R * Math.sin(this.mapCoords[j].theta);
 
-			vertices.push(x); // x
-			vertices.push(z); // y
-			vertices.push(y); // z	
+			const vec = new THREE.Vector3(x,y,z);
+			
+			vertices.push(vec.x); // x
+			vertices.push(vec.y); // y
+			vertices.push(vec.z); // z	
 		}
 
 		geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );

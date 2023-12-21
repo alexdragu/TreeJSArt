@@ -79,12 +79,12 @@ class AttributeGenerator {
             const stepSize = variation * timeBetweenCalls;
 
             if ((continuous == true) && (move == true)){
-                console.log("Updating continous attribute: " + name + " to " + targetValue);
+//                console.log("Updating continous attribute: " + name + " to " + targetValue);
                 if (attribute.value < targetValue) {
                     if (attribute.value + stepSize > targetValue){
                         attribute.value = targetValue;
                         attribute.move = false;
-                        console.log("Clamped continous attribute: " + name + " to " + targetValue);                        
+//                        console.log("Clamped continous attribute: " + name + " to " + targetValue);                        
                         this.randomTarget(attribute);
                     }else
                         attribute.value += stepSize;
@@ -92,7 +92,7 @@ class AttributeGenerator {
                     if (attribute.value - stepSize < targetValue){
                         attribute.value = targetValue;
                         attribute.move = false;
-                        console.log("Clamped continous attribute: " + name + " to " + targetValue);
+//                        console.log("Clamped continous attribute: " + name + " to " + targetValue);
                         this.randomTarget(attribute);
                     }else
                         attribute.value -= stepSize;

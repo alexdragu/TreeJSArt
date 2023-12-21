@@ -82,7 +82,43 @@
 			import { VertexTangentsHelper } from 'three/addons/helpers/VertexTangentsHelper.js';
 			import { LbMap } from 'three/lexblue/LbMap.js';
 			import { AttributeGenerator } from 'three/lexblue/AttributeGenerator.js';
-			
+// ...
+function getObjectsCount() {
+	const url = `http://${window.location.hostname}:8082/get_count`;
+
+	return fetch(url)
+		.then(response => response.json())
+		.then(data => {
+			// Handle the response data here
+			console.log("Count thing :" +data + " " + data.countx) ;
+			return data.countx;
+		})
+		.catch(error => {
+			// Handle any errors that occurred during the request
+			console.error(error);
+		});
+}
+
+function getObjectString(entry) {
+    const url = `http://${window.location.hostname}:8082/get_entry?obj_entry=${entry}`;
+
+    return fetch(url)
+        .then(response => response.text())  // Get the response as text
+        .then(text => {
+            console.log('Raw response:', text);  // Log the raw response
+
+            if (text) {  // If the response is not empty
+                const data = JSON.parse(text);  // Parse the text as JSON
+				return data.coordinates;
+            } else {
+                console.log('Empty response');
+            }
+        })
+        .catch(error => {
+            console.error(error);
+        });
+}
+
 			var canvas;
 
 			let SCREEN_WIDTH = window.innerWidth;
@@ -126,24 +162,23 @@
 			const attributes = [
 				{ name: 'winxcnt', range: [1, 30], variation: 1 , continuous: false},
 				{ name: 'winycnt', range: [1, 30], variation: 1 , continuous: false},
-				{ name: 'fact', range: [0.5, 1.0], variation: 0.01 , continuous: true},
+				{ name: 'fact', range: [0.5, 1.0], variation: 0.01 , continuous: false},
 				{ name: 'defIndexfi', range: [Math.PI/R, 2*Math.PI], variation: Math.PI/(2*R) , continuous: true},
 				{ name: 'defIndextheta', range: [Math.PI/R, 2*Math.PI], variation: Math.PI/(2*R) , continuous: true}
 			];
 
-			let generator;
-			let randomSet;
+			let generator;			
 			let lastRenderTime;
+			let mapRawData;
+			let objCount = 0;
 
 			init();
 			animate();
 
-			
-
 			// the sphere
 			function init() {
 				lastRenderTime = performance.now();
-				console.log ("v 0.3");
+				console.log ("v 0.4");
 				hdiv = document.getElementById("info");
 				
 				container = document.createElement( 'div' );
@@ -201,11 +236,22 @@
 
 				cameraRig.add( mesh3 );
 
-				lbMap = new LbMap(mesh, R,2*Math.PI/15,2*Math.PI/15,0.3*R,0.3*R,5,10,1.1,1, Math.PI, Math.PI);
+				lbMap = new LbMap(mesh, R,2*Math.PI/15.0,2*Math.PI/15.0,0.3*R,0.3*R,5,10,1.0,1.0, Math.PI, Math.PI);
 				lbMap.setScrSize(-0.5 * frustumSize * aspect , frustumSize );
-				lbMap.init();							
+				lbMap.init();	
+								
+				lbMap.factory();
+				// Call the function to make the GET request
+				getObjectsCount().then(count => {
+					console.log("Count Async: " + count);
+					objCount = count;
+				});
 
-				cameraRig.add( lbMap.particlesMap );
+				//mapRawData = getObjectString(9); // this is Argentina
+				// 153 antarctica
+				// 9 argentina
+				// 132 australia
+				pullRemoteObject (133);
 
 				canvas = document.querySelector('.webgl');
 				renderer = new THREE.WebGLRenderer( {canvas, preserveDrawingBuffer: true , antialias: true } );
@@ -225,43 +271,28 @@
 				window.addEventListener( 'resize', onWindowResize );
 				document.addEventListener( 'keydown', onKeyDown );
 
-				window.addEventListener('dblclick', () => {
-                const fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement
-
-                if (!fullscreenElement) {
-                    if (canvas.requestFullscreen) {
-                        canvas.requestFullscreen()
-                    }
-                    else if (canvas.webkitRequestFullscreen) {
-                        canvas.webkitRequestFullscreen()
-                    }
-                }
-                else {
-                    if (document.exitFullscreen) {
-                        document.exitFullscreen()
-                    }
-                    else if (document.webkitExitFullscreen) {
-                        document.webkitExitFullscreen()
-                    }
-                }
-            })
+				window.addEventListener('dblclick', onDblclick);
 
 				controls = new TrackballControls( camera,  renderer.domElement);  //				
 
 				gui = setupGui();
 
-				lbMap.factory();
-				ReGenerateMap(true);
 
 				// prepare the generator
 				generator = new AttributeGenerator(attributes,lbMap);
-				randomSet = generator.generateRandomSet();
-
-				console.log(randomSet);							
-				
+				generator.generateRandomSet();
 
 			}
 			
+			function pullRemoteObject (objId){
+				getObjectString(objId).then(mapRawData => {
+					//console.log("Map Raw Data Async: " + mapRawData);				
+					lbMap.initMapData(mapRawData);
+					ReGenerateMap(true);
+
+					cameraRig.add( lbMap.particlesMap );
+				});
+			}
 
 			function setupGui() {
 
@@ -341,7 +372,26 @@
 					lbMap.regenerateSphereMap();
 			}
 
-			//
+			function onDblclick(){			
+                const fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement
+
+                if (!fullscreenElement) {
+                    if (canvas.requestFullscreen) {
+                        canvas.requestFullscreen()
+                    }
+                    else if (canvas.webkitRequestFullscreen) {
+                        canvas.webkitRequestFullscreen()
+                    }
+                }
+                else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen()
+                    }
+                    else if (document.webkitExitFullscreen) {
+                        document.webkitExitFullscreen()
+                    }
+                }            
+			}
 
 			function onKeyDown( event ) {
 				let cntrl = document.getElementById("bluecontrol");
@@ -417,7 +467,14 @@
 						lbMap.factory();
 						console.log("Randomized " + lbMap.winxcnt + " " + lbMap.winycnt + " " + lbMap.fact + " " + lbMap.defIndexfi + " " + lbMap.defIndextheta);
 						ReGenerateMap(false);
-						break;						
+						break;		
+						
+					case 83: /*S*/
+						
+						const objId = Math.floor(Math.random() * objCount);
+						console.log("Random Object " + objId + " of : " + objCount);
+						pullRemoteObject (objId);
+						break;							
 
 				}
 				console.log(event.keyCode);
@@ -522,12 +579,12 @@ if (go_auto){
 							effectController.vstep = lbMap.Vstep;
 
 							//gui.update();
-							console.log ("autofit");						
+							//console.log ("autofit");						
 
 				}
 
 				lbMap.factory();
-				console.log("Randomized " + lbMap.defIndexfi + " " + lbMap.defIndextheta + " " + lbMap.fact);
+//				console.log("Randomized " + lbMap.defIndexfi + " " + lbMap.defIndextheta + " " + lbMap.fact);
 				ReGenerateMap(false);
 }
 				const r = 0;
