@@ -47,7 +47,12 @@ class LbMap {
 	particles;
 	particlesMap;			
 	square_group;
+	square_surface_group;
+	square_flat_group;
+	radius_group;
 	square_list = [];
+	square_flat_list = [];	
+	square_surface_list = [];
 	mapCoords = [];
 	activeMapCoords = [];
 
@@ -81,7 +86,8 @@ class LbMap {
 	phi_cover = 0;
 	theta_cover = 0;
 	
-	constructor(object ,R, Vstep, Hstep, window_w, window_h, winxcnt ,winycnt ,fact ,mag, phi_cover, theta_cover){
+	constructor(scene,object ,R, Vstep, Hstep, window_w, window_h, winxcnt ,winycnt ,fact ,mag, phi_cover, theta_cover){
+		this.scene = scene;
 		this.object = object;
 		this.R = R;
 		this.Vstep = Vstep;
@@ -152,23 +158,28 @@ class LbMap {
 		} );
 		
 		this.factory();		
+
+		this.square_surface_group = new THREE.Group();
+		this.square_flat_group = new THREE.Group();
 	}
 
-	initMapData(mapdata) {
+	initMapData(mapdata) {		
 		const arrayOfMaps = [];
 		const newMapCoords = this.parsePolygonCoords(mapdata).flat();
 		//this.mapCoords = newMapCoords;
 		this.mapCoords = this.mapCoords.concat(newMapCoords);
 		// console.log(this.mapCoords);
 		this.object.remove(this.particles);
-		this.object.remove(this.square_group);
+		this.scene.remove(this.square_group);
+		this.scene.remove(this.radius_group);
 
 		this.particles = this.generateMap();
-		this.regeneratemap(true);
 		this.square_group = this.generateWindows();
-
+		this.regeneratemap(true);
+		
 		this.object.add(this.particles);
-		this.object.add(this.square_group);
+		this.scene.add(this.square_group);
+		this.scene.add(this.radius_group);
 	}
 
 	regeneratemap(regen){
@@ -176,23 +187,35 @@ class LbMap {
 			return this.generateProjectionMap(regen);
 		else{
 			this.particlesMap = this.generateProjectionMap(regen);
-			this.particlesMap.position.z = 150;
-			this.particlesMap.position.x = -this.out_scr_w/2;
-			this.particlesMap.position.y = this.out_scr_h/2;
+			this.particlesMap.position.z = 260;
+			//this.particlesMap.position.x = -this.out_scr_w/2;
+			//this.particlesMap.position.y = this.out_scr_h/2;
 		}
 	}
 
 	regenerateSphereMap(){
 		// clean-up
 		for (var n = 0;n<this.square_list.length;n++){								
-			this.square_list[n].geometry.dispose();					
+
+			this.square_list[n].geometry.dispose();
+			this.square_flat_list[n].geometry.dispose();
+			this.square_surface_list[n].geometry.dispose();	
+
 			this.square_group.remove(this.square_list[n]);						
+			this.square_flat_group.remove(this.square_flat_list[n]);
+			this.square_surface_group.remove(this.square_surface_list[n]);
 		}
 
 		this.square_list = [];
-		this.object.remove(this.square_group);
+		this.square_surface_list = [];
+		this.square_flat_list = [];
+
+		this.scene.remove(this.square_group);
 		this.square_group = this.generateWindows();
-		this.object.add(this.square_group);
+
+		this.scene.add(this.square_group);	
+		this.scene.add(this.square_surface_group);
+		this.scene.add(this.square_flat_group);
 	}
 	
 	get particles (){
@@ -207,17 +230,47 @@ class LbMap {
 		return this.square_group;
 	}
 
+	cartesianToSpehrical(i, positionAttribute){
+		var theta = Math.acos(positionAttribute.getZ(i) / this.R);
+		var fi = Math.atan2(positionAttribute.getY(i), positionAttribute.getX(i));
+		return {fi: fi, theta: theta};
+	}
 
-	// x,y number of squares
-	generateProjectionMap(regen){	
-		
+	isPointInsidePolygon(point, polygonPoints) {
+		let x = point[0], y = point[1];
+	
+		let inside = false;
+		for (let i = 0, j = polygonPoints.length - 1; i < polygonPoints.length; j = i++) {
+			let xi = polygonPoints[i][0], yi = polygonPoints[i][1];
+			let xj = polygonPoints[j][0], yj = polygonPoints[j][1];
+	
+			let intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+			if (intersect) inside = !inside;
+		}
+	
+		return inside;
+	}
+
+	toScreenPosition(vec,kx,ky){
 		const amp = this.prjMapData.amp;
 		const map_square_size_x = this.prjMapData.square_size_x;
-		const map_square_size_y = this.prjMapData.square_size_y;	
-		
+		const map_square_size_y = this.prjMapData.square_size_y;		
 		const ratio_x = this.out_scr_w/(map_square_size_x * this.prjMapData.x);
 		const ratio_y = this.out_scr_h/(map_square_size_y * this.prjMapData.y);
-		
+	
+
+		const vdest = new THREE.Vector3(
+			amp * ratio_x * (vec.x + map_square_size_x*kx - map_square_size_x * (this.prjMapData.x -1)/2.0) , 
+			amp * ratio_y * (-vec.y - map_square_size_y*ky + map_square_size_y * (this.prjMapData.y -1)/2.0) ,
+			vec.z );
+		return vdest;
+	}
+
+	// x,y number of squares
+	generateProjectionMap(regen){					
+		const map_square_size_x = this.prjMapData.square_size_x;
+		const map_square_size_y = this.prjMapData.square_size_y;	
+				
 		let positionAttribute;
 		let right_friendAttr;
 		let sizesAttr;
@@ -240,62 +293,144 @@ class LbMap {
 
 		let vindex = 0;		
 
+		for (var n = 0;n<this.square_list.length;n++){
+			const positionAttributeSquare = this.square_flat_list[n].geometry.getAttribute( 'position' );
+			
+			const planePoints = [];
+			for (let i = 0; i < 5; i++) {
+				const x = positionAttributeSquare.getX(i);
+				const y = positionAttributeSquare.getY(i);
+				const z = positionAttributeSquare.getZ(i);
+				planePoints.push(new THREE.Vector3(x, y, z));					
+			}
+
+			const plane = new THREE.Plane().setFromCoplanarPoints(planePoints[0], planePoints[1], planePoints[2]);
+			const horizontalPlaneNormal = new THREE.Vector3(0, 0, 1);
+			const quaternion = new THREE.Quaternion().setFromUnitVectors(horizontalPlaneNormal, plane.normal);
+			//console.log('Quaternion:', quaternion);
+			let q_inverse = quaternion.invert();
+
+			let kx = n%this.prjMapData.x;
+			let ky = Math.floor(n/this.prjMapData.x);
+			
+			for (let i = 0; i < 5; i++) {
+				const x = positionAttributeSquare.getX(i);
+				const y = positionAttributeSquare.getY(i);
+				const z = positionAttributeSquare.getZ(i);
+				let point = new THREE.Vector3(x, y, z);
+				this.square_surface_list[n].worldToLocal(point);						
+				point.applyQuaternion(q_inverse); // Apply quaternion to each point
+				const fpoint = this.toScreenPosition(point, kx, ky);
+				positionAttributeSquare.setXYZ(i, fpoint.x, fpoint.y, fpoint.z);
+				//positionAttributeSquare.setXYZ(i, point.x + map_square_size_x*ky, point.y - map_square_size_y*kx, point.z);
+				//positionAttributeSquare.setXYZ(i, point.x , point.y , point.z);
+				
+			}
+			positionAttributeSquare.needsUpdate = true;
+
+		}
+
+
 		for ( var j = 0; j < this.mapCoords.length; j++ ) {	
 
+			for (var n = 0;n<this.square_list.length;n++){
+				// there are 5 points per square
+				const positionAttributeSquare = this.square_list[n].geometry.getAttribute( 'position' );
 
-			for (var kx=0;kx<this.prjMapData.x;kx++){
-				for (var ky=0;ky<this.prjMapData.y;ky++){
+				var x = this.R * Math.cos(this.mapCoords[j].theta) * Math.cos(this.mapCoords[j].fi);
+				var y = this.R * Math.cos(this.mapCoords[j].theta) * Math.sin(this.mapCoords[j].fi);
+				var z = this.R * Math.sin(this.mapCoords[j].theta);
+	
+				const vec = new THREE.Vector3(x,y,z);
 				
-					const fi = this.mapCoords[j].fi;
-					const theta = this.mapCoords[j].theta;
-					//const x = this.defIndexh + kx;
-					//const y = this.defIndexv + ky;
-					const x = kx;
-					const y = ky;					
-					const vec = this.getMapSlice(fi, theta, x, y );
+				const planePoints = [];
+				for (let i = 0; i < 5; i++) {
+					const x = positionAttributeSquare.getX(i);
+					const y = positionAttributeSquare.getY(i);
+					const z = positionAttributeSquare.getZ(i);
+					planePoints.push(new THREE.Vector3(x, y, z));					
+				}
 
-					if ((vec.x <= -this.prjMapData.window_w/2) || (vec.x >= this.prjMapData.window_w/2) || 
-						(vec.y <= -this.prjMapData.window_h/2) || (vec.y >= this.prjMapData.window_h/2) || (vec.z<0)
-					){						
-					}else{
-						vec.z = 0;		
-						const vdest = new THREE.Vector3(
-							amp * ratio_x * (vec.x + map_square_size_x*ky + map_square_size_x/2.0) , 
-							amp * ratio_y * (-vec.y - map_square_size_y*kx - map_square_size_y/2.0) ,
-							vec.z );		
+				//var map_point = {fi: this.mapCoords[j].fi, theta: this.mapCoords[j].theta};
 
-						this.rfcolor = this.color;
-						this.color.setHSL( j / this.mapCoords.length, 1.0, 0.5 );
+				//console.log("Plane points " + planePoints.length + " "+ planePoints[0].x + " " + planePoints[0].y + " " + planePoints[0].z);
+				//console.log("Plane points " + planePoints);
+				const plane = new THREE.Plane().setFromCoplanarPoints(planePoints[0], planePoints[1], planePoints[2]);
+				const horizontalPlaneNormal = new THREE.Vector3(0, 0, 1);
+				const quaternion = new THREE.Quaternion().setFromUnitVectors(horizontalPlaneNormal, plane.normal);
+				//console.log('Quaternion:', quaternion);
+				let q_inverse = quaternion.invert();
+								
+				let kx = n%this.prjMapData.x;
+				let ky = Math.floor(n/this.prjMapData.x);
+
+				const vec_origin = new THREE.Vector3(0, 0, 0);
+				// go for the intersection
+				let raycaster = new THREE.Raycaster();
+				//let positions = line.geometry.attributes.position.array;
+
+				let point1 = new THREE.Vector3(vec_origin.x, vec_origin.y, vec_origin.z);
+				let point2 = new THREE.Vector3(vec.x, vec.y, vec.z);
+				
+				//raycaster.set(point1, point2.clone().sub(point1).normalize());
+				let direction = new THREE.Vector3().subVectors(point2, point1).normalize();
+				raycaster.set(point1, direction);
+
+				let intersects = raycaster.intersectObject(this.square_surface_list[n]);
+
+				if (intersects.length <= 0) {
+					//console.log('No intersection');
+				} else {
 					
-						if (!regen){
+					let intersectionPoint = intersects[0].point;
+					//console.log('Intersection point:', intersectionPoint);
+					
+					this.square_surface_list[n].worldToLocal(intersectionPoint);
+					//console.log('Intersection point (local space):', intersectionPoint);
+					intersectionPoint.applyQuaternion(q_inverse);
+																											
+					vec.x = intersectionPoint.x;// + map_square_size_x*ky;
+					vec.y = intersectionPoint.y;// - map_square_size_y*kx;
+					vec.z = intersectionPoint.z;
+												
+					const vdest = this.toScreenPosition(vec, kx, ky);
+
+					//const vdest = vec;
+					//console.log("Intersection is inside the polygon : " +" "+ vdest.x + " " + vdest.y + " " + vdest.z);
 							
-							positionAttribute.setXYZ( vindex, vdest.x, vdest.y, vdest.z);
-							colorAttr.setXYZ( vindex, this.color.r, this.color.g, this.color.b );
-							right_friendAttr.setXYZ( vindex, this.rfcolor.r,kx, ky );
-							sizesAttr.setXYZ( vindex, 10 );
+					this.rfcolor = this.color;
+					//this.color.setHSL( j / this.mapCoords.length, 1.0, 0.5 );
+					this.color.setHSL( 1.0, 1.0, 0.5 );
+				
+					if (!regen){
+						
+						positionAttribute.setXYZ( vindex, vdest.x, vdest.y, vdest.z);
+						colorAttr.setXYZ( vindex, this.color.r, this.color.g, this.color.b );
+						right_friendAttr.setXYZ( vindex, this.rfcolor.r,kx, ky );
+						sizesAttr.setXYZ( vindex, 100 );
 
-							if (vindex > positionAttribute.count){
-								console.log("vindex > positionAttribute.count");
-								return false;
-							}
+						if (vindex > positionAttribute.count){
+							console.log("vindex > positionAttribute.count");
+							return false;
+						}
 
-						}else{
-							this.right_friend.push( this.rfcolor.r,kx, ky );
-							this.colors.push( this.color.r, this.color.g, this.color.b );		
-							let x = j%(2*20);
-							if (x>30) x = (20 - x%20);
-							this.sizes.push( x + 5);
-							//this.sizes.push( 10);
-							this.pointsMap.push (vdest);
-							this.activeMapCoords.push (vindex,kx,ky,j);							
-						} 
+					}else{
+						this.right_friend.push( this.rfcolor.r,kx, ky );
+						this.colors.push( this.color.r, this.color.g, this.color.b );		
+						let x = (vindex/2+2*n)%(2*20);
+						if (x>30) x = (20 - x%20);
+						this.sizes.push( x/3.0 + 1 );
+						//this.sizes.push( 100);
+						this.pointsMap.push (vdest);
+						this.activeMapCoords.push (vindex,kx,ky,j);							
+					} 
 
-						vindex++;
-
-					}
-
+					vindex++;
+					
+					
 				}
 			}
+			//console.log("vindex " + vindex);
 
 		}		
 
@@ -319,53 +454,14 @@ class LbMap {
 			return true;
 		}
 
-		//return new THREE.Points( geometryMap, new THREE.PointsMaterial( { color: 0x00AAAA } ) );
+		//return new THREE.Points( this.geometryMap, new THREE.PointsMaterial( { color: 0x22AAFF } ) );
 		return new THREE.Points( this.geometryMap, this.shaderMaterial );
 	}
 
-	updateProjectionMap1(){
-		const positionAttribute = this.particlesMap.geometry.getAttribute( 'position' );
-		const amp = this.prjMapData.amp;
-		const map_square_size_x = this.prjMapData.square_size_y;
-		const map_square_size_y = this.prjMapData.square_size_x;
-
-
-		for ( let i = 0; i < positionAttribute.count; i ++ ) {							
-
-			const hmid = i%this.prjMapData.x; 						
-			const vmid = Math.floor(((i%(this.prjMapData.x*this.prjMapData.y))/this.prjMapData.x));
-
-			const vec = this.getMapSlice(
-				this.mapCoords[Math.floor(i/(this.prjMapData.x*this.prjMapData.y))].fi + this.defIndexfi , 
-				this.mapCoords[Math.floor(i/(this.prjMapData.x*this.prjMapData.y))].theta + this.defIndextheta ,
-				this.defIndexv + i%this.prjMapData.x, 
-				this.defIndexh + Math.floor(((i%(this.prjMapData.x*this.prjMapData.y))/this.prjMapData.x)) 
-				);
-			
-									
-			// do the magic
-			// pass it through the window
-			
-			if ((vec.x <= -this.prjMapData.window_w/2) || (vec.x >= this.prjMapData.window_w/2) || 
-				(vec.y <= -this.prjMapData.window_h/2) || (vec.y >= this.prjMapData.window_h/2)
-			){
-				vec.z = 10000;
-
-			}else{
-				vec.z = 0;
-			}
-							
-			positionAttribute.setXYZ( i, vec.x*amp + map_square_size_x*hmid + this.prjMapData.offset_x, 
-				vec.y*amp + this.prjMapData.offset_y - map_square_size_y*vmid ,vec.z*amp );
-			//positionAttribute.setXYZ( i, vec.x , vec.z, vec.y);
-		}
-
-		//console.log(prjMapData.window_h);
-		//console.log(prjMapData.window_w);
-
-		positionAttribute.needsUpdate = true; 
-		this.particlesMap.geometry.computeBoundingBox();
-		this.particlesMap.geometry.computeBoundingSphere();
+	// Function to check if a point is inside a polygon
+	isPointInsidePolygon(point, polygonPoints) {
+		const polygon = new THREE.Polygon(polygonPoints);
+		return polygon.containsPoint(point);
 	}
 
 	getMapSlice(fi, theta, hshift, vshift){
@@ -374,11 +470,6 @@ class LbMap {
 		var vstep = this.prjMapData.vstep;
 		var hstep = this.prjMapData.hstep;
 
-		// map 01
-/*		
-		var hshift_f = this.defIndexfi + hshift * hstep;
-		var vshift_f = this.defIndextheta + vshift * vstep;
-*/
 		var hshift_f = hshift * hstep;
 		var vshift_f = vshift * vstep;
 
@@ -390,13 +481,6 @@ class LbMap {
 
 		// should invert the order of rotation
 		var quaternion = new THREE.Quaternion();
-/*		
-		quaternion.setFromAxisAngle( new THREE.Vector3( 0, 1, 0 ), vshift_f);
-		vec.applyQuaternion( quaternion );
-		
-		quaternion.setFromAxisAngle( new THREE.Vector3( 1, 0, 0 ), hshift_f);
-		vec.applyQuaternion( quaternion );
-*/
 
 		quaternion.setFromAxisAngle( new THREE.Vector3( 0, 1, 0 ), vshift_f);
 		vec.applyQuaternion( quaternion );
@@ -410,8 +494,6 @@ class LbMap {
 		quaternion.setFromAxisAngle( new THREE.Vector3( 1, 0, 0 ), this.defIndexfi);
 		vec.applyQuaternion( quaternion );
 
-
-		//return new THREE.Vector3(vec.x , vec.y ,vec.z);
 		return vec;
 	}
 
@@ -421,13 +503,6 @@ class LbMap {
 		var quaternion = new THREE.Quaternion();
 
 		vec = new THREE.Vector3(x,y,z);
-/*		
-		quaternion.setFromAxisAngle( new THREE.Vector3( 0, 1, 0 ), this.defIndextheta+j*vstep);				
-		vec.applyQuaternion( quaternion );
-	
-		quaternion.setFromAxisAngle( new THREE.Vector3( -1, 0, 0 ), this.defIndexfi+i*hstep);		
-		vec.applyQuaternion( quaternion );							
-*/
 
 		// get the main shape
 		quaternion.setFromAxisAngle( new THREE.Vector3( 0, 1, 0 ), j*vstep - this.prjMapData.y*vstep/2.0 + vstep/2.0);
@@ -496,6 +571,7 @@ class LbMap {
 						
 		const points = [];
 		const geometry = new THREE.BufferGeometry();
+		const geometry_flat = new THREE.BufferGeometry();
 
 		var x,y,z;				
 		var vec;
@@ -522,11 +598,34 @@ class LbMap {
 		points.push (vec);
 
 		geometry.setFromPoints( points );
+		
 
-		const material = new THREE.LineBasicMaterial( { color: 0xffaaff } );										
+		const material = new THREE.LineBasicMaterial( { color: 0xff2222 } );										
 		const line = new THREE.Line( geometry, material );	
+		const line_flat = new THREE.Line( geometry.clone(), material );	
 
-		this.square_list.push(line);				
+
+		let geometry_surface = new THREE.BufferGeometry();
+
+		let vertices = [];
+		let indices = [];
+		// Add the points as vertices
+		for (let i = 0; i < points.length - 1; i++) {
+			vertices.push(points[i].x, points[i].y, points[i].z);
+		}
+		// Define the vertices that make up each of the two triangles
+		indices.push(0, 1, 2); // First triangle
+		indices.push(0, 2, 3); // Second triangle
+		
+		geometry_surface.setIndex(indices);
+		geometry_surface.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+		
+		let material_surface = new THREE.MeshBasicMaterial({ color: 0xffaaff, side: THREE.DoubleSide });
+		let mesh = new THREE.Mesh(geometry_surface, material_surface);
+
+		this.square_list.push(line);
+		this.square_flat_list.push(line_flat);
+		this.square_surface_list.push(mesh);
 	}
 
 	// build the squeares for wach window to be projected on the sphere
@@ -545,9 +644,12 @@ class LbMap {
 
 		// build the geometry of the squares
 		for (var n = 0;n<this.square_list.length;n++){								
-			square_group.add(this.square_list[n]);						
+			square_group.add(this.square_list[n]);
+			this.square_surface_group.add(this.square_surface_list[n]);	
+			this.square_flat_group.add(this.square_flat_list[n]);			
 		}
 
+		this.square_flat_group.position.z = 250;
 		return square_group;
 	}
 
@@ -588,8 +690,12 @@ class LbMap {
 	}
 
 	generateMap(){
-		const geometry = new THREE.BufferGeometry();				
+		this.radius_group = new THREE.Group();
+		const geometry = new THREE.BufferGeometry();						
 		const vertices = [];
+		const vec_origin = new THREE.Vector3(0, 0, 0);
+		let points = [];
+		
 
 		for ( var j = 0; j < this.mapCoords.length; j++ ) {	
 
@@ -598,16 +704,51 @@ class LbMap {
 			var z = this.R * Math.sin(this.mapCoords[j].theta);
 
 			const vec = new THREE.Vector3(x,y,z);
-			
+		//	const vec_origin = new THREE.Vector3(x+10,y+10,z+10);
+
 			vertices.push(vec.x); // x
 			vertices.push(vec.y); // y
 			vertices.push(vec.z); // z	
+
+			// radius line
+			const geometry_line = new THREE.BufferGeometry();		
+			points = [];
+			points.push (vec);
+			points.push (vec_origin);
+//			console.log("Radius " + vec.x + " " + vec.y + " " + vec.z);
+
+			geometry_line.setFromPoints( points );				
+			const line = new THREE.Line( geometry_line, new THREE.LineBasicMaterial( { color: 0x00ffff } ) );
+
+			this.radius_group.add(line);
+			console.log("Radius group len"+ this.radius_group.children.length);
 		}
 
 		geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
 		return new THREE.Points( geometry, new THREE.PointsMaterial( { color: 0x008888 } ) );				
 	}
+	// fi , theta, coords /in lat and longitude
+	// index id
+	// hmid, vmid - map sqluare pos	
+	ReGenerateMap(regen){
+		const hide_sphere = false;
+		if (regen){
+			this.particlesMap.geometry.dispose();
+			this.scene.remove( this.particlesMap );
+			
+			if (!hide_sphere)
+				this.regenerateSphereMap();
 
+			this.regeneratemap(regen);					
+			this.scene.add( this.particlesMap );
+		} else {
+			if (!this.regeneratemap(regen)){				
+				console.log("Force regen Map");
+				this.ReGenerateMap(true);
+			}
+		}				
+
+	}
 
 	
 }

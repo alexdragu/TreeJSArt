@@ -178,7 +178,7 @@ function getObjectString(entry) {
 			// the sphere
 			function init() {
 				lastRenderTime = performance.now();
-				console.log ("v 0.4");
+				console.log ("v 0.5");
 				hdiv = document.getElementById("info");
 				
 				container = document.createElement( 'div' );
@@ -236,7 +236,7 @@ function getObjectString(entry) {
 
 				cameraRig.add( mesh3 );
 
-				lbMap = new LbMap(mesh, R,2*Math.PI/15.0,2*Math.PI/15.0,0.3*R,0.3*R,5,10,1.0,1.0, Math.PI, Math.PI);
+				lbMap = new LbMap(scene, mesh, R,2*Math.PI/15.0,2*Math.PI/15.0,0.3*R,0.3*R,5,10,1.0,1.0, Math.PI, Math.PI);
 				lbMap.setScrSize(-0.5 * frustumSize * aspect , frustumSize );
 				lbMap.init();	
 								
@@ -288,7 +288,7 @@ function getObjectString(entry) {
 				getObjectString(objId).then(mapRawData => {
 					//console.log("Map Raw Data Async: " + mapRawData);				
 					lbMap.initMapData(mapRawData);
-					ReGenerateMap(true);
+					lbMap.ReGenerateMap(true);
 
 					cameraRig.add( lbMap.particlesMap );
 				});
@@ -351,27 +351,6 @@ function getObjectString(entry) {
 			}
 
 
-			// fi , theta, coords /in lat and longitude
-			// index id
-			// hmid, vmid - map sqluare pos	
-			function ReGenerateMap(regen){
-
-				if (regen){
-					lbMap.particlesMap.geometry.dispose();
-					cameraRig.remove( lbMap.particlesMap );
-					lbMap.regeneratemap(regen);					
-					cameraRig.add( lbMap.particlesMap );
-				} else {
-					if (!lbMap.regeneratemap(regen)){				
-						console.log("Force regen Map");
-						ReGenerateMap(true);
-					}
-				}
-				
-				if (!hide_sphere)
-					lbMap.regenerateSphereMap();
-			}
-
 			function onDblclick(){			
                 const fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement
 
@@ -398,37 +377,37 @@ function getObjectString(entry) {
 				switch ( event.keyCode ) {
 
 					case 79: /*O*/						
-						ReGenerateMap(false);
+						lbMap.ReGenerateMap(false);
 						activeCamera = cameraOrtho;
 						activeHelper = cameraOrthoHelper;
 						break;
 					case 80: /*P*/
-						ReGenerateMap(false);
+						lbMap.ReGenerateMap(false);
 						activeCamera = cameraPerspective;
 						activeHelper = cameraPerspectiveHelper;
 						break;
 					case 74: /*J*/
 						lbMap.defIndexv--;
 						//lbMap.updateMap();
-						ReGenerateMap(false);
+						lbMap.ReGenerateMap(false);
 						//lbMap.updateWindows();
 						break;
 					case 85: /*U*/						
 						lbMap.defIndexv++;
 						//lbMap.updateMap();
-						ReGenerateMap(false);
+						lbMap.ReGenerateMap(false);
 						//lbMap.updateWindows();
 						break;												
 					case 73: /*I*/						
 						lbMap.defIndexh++;
 						//lbMap.updateMap();
-						ReGenerateMap(false);
+						lbMap.ReGenerateMap(false);
 						//lbMap.updateWindows();
 						break;						
 					case 75: /*K*/
 						lbMap.defIndexh--;
 						//lbMap.updateMap();
-						ReGenerateMap(false);
+						lbMap.ReGenerateMap(false);
 						//lbMap.updateWindows();
 						break;
 					case 72: /*H*/						
@@ -458,7 +437,7 @@ function getObjectString(entry) {
 						updateEffectsController();
 						lbMap.factory();
 						console.log("Randomized " + lbMap.winxcnt + " " + lbMap.winycnt + " " + lbMap.fact);
-						ReGenerateMap(false);
+						lbMap.ReGenerateMap(false);
 						break;
 
 					case 68: /*D*/
@@ -466,7 +445,7 @@ function getObjectString(entry) {
 						updateEffectsController();
 						lbMap.factory();
 						console.log("Randomized " + lbMap.winxcnt + " " + lbMap.winycnt + " " + lbMap.fact + " " + lbMap.defIndexfi + " " + lbMap.defIndextheta);
-						ReGenerateMap(false);
+						lbMap.ReGenerateMap(false);
 						break;		
 						
 					case 83: /*S*/
@@ -507,7 +486,7 @@ function getObjectString(entry) {
 				//lbMap.updateMap();
 				//lbMap.updateWindows();
 
-				ReGenerateMap(false);
+				lbMap.ReGenerateMap(false);
 
 			}
 
@@ -585,7 +564,7 @@ if (go_auto){
 
 				lbMap.factory();
 //				console.log("Randomized " + lbMap.defIndexfi + " " + lbMap.defIndextheta + " " + lbMap.fact);
-				ReGenerateMap(false);
+				lbMap.ReGenerateMap(true);
 }
 				const r = 0;
 
@@ -653,10 +632,10 @@ if (go_auto){
 
 						}
 						lbMap.factory();
-						ReGenerateMap(false);
+						lbMap.ReGenerateMap(true);
 					} else{
 						lbMap.factory();
-						ReGenerateMap(false);
+						lbMap.ReGenerateMap(true);
 					}
 
 					//lbMap.updateMap();
