@@ -170,7 +170,7 @@ class LbMap {
 		this.mapCoords = this.mapCoords.concat(newMapCoords);
 		// console.log(this.mapCoords);
 		this.object.remove(this.particles);
-		this.scene.remove(this.square_group);
+		this.object.remove(this.square_group);
 		this.scene.remove(this.radius_group);
 
 		this.particles = this.generateMap();
@@ -178,8 +178,8 @@ class LbMap {
 		this.regeneratemap(true);
 		
 		this.object.add(this.particles);
-		this.scene.add(this.square_group);
-		this.scene.add(this.radius_group);
+		this.object.add(this.square_group);
+		//this.scene.add(this.radius_group);
 	}
 
 	regeneratemap(regen){
@@ -210,11 +210,11 @@ class LbMap {
 		this.square_surface_list = [];
 		this.square_flat_list = [];
 
-		this.scene.remove(this.square_group);
+		this.object.remove(this.square_group);
 		this.square_group = this.generateWindows();
 
-		this.scene.add(this.square_group);	
-		this.scene.add(this.square_surface_group);
+		this.object.add(this.square_group);	
+		//this.scene.add(this.square_surface_group);
 		this.scene.add(this.square_flat_group);
 	}
 	
@@ -307,8 +307,23 @@ class LbMap {
 			const plane = new THREE.Plane().setFromCoplanarPoints(planePoints[0], planePoints[1], planePoints[2]);
 			const horizontalPlaneNormal = new THREE.Vector3(0, 0, 1);
 			const quaternion = new THREE.Quaternion().setFromUnitVectors(horizontalPlaneNormal, plane.normal);
-			//console.log('Quaternion:', quaternion);
 			let q_inverse = quaternion.invert();
+
+			// compute the angle in plane of the square
+			let point0 = new THREE.Vector3(planePoints[0].x, planePoints[0].y, planePoints[0].z);
+			let point1 = new THREE.Vector3(planePoints[1].x, planePoints[1].y, planePoints[1].z);
+			let point2 = new THREE.Vector3(planePoints[2].x, planePoints[2].y, planePoints[2].z);
+			this.square_surface_list[n].worldToLocal(point0);
+			point0.applyQuaternion(q_inverse); // Apply quaternion to each point
+
+			this.square_surface_list[n].worldToLocal(point1);
+			point1.applyQuaternion(q_inverse); // Apply quaternion to each point
+
+			this.square_surface_list[n].worldToLocal(point2);
+			point2.applyQuaternion(q_inverse); // Apply quaternion to each point
+
+			let angle = Math.atan2(point1.x - point0.x, point1.y - point0.y);
+
 
 			let kx = n%this.prjMapData.x;
 			let ky = Math.floor(n/this.prjMapData.x);
@@ -319,21 +334,28 @@ class LbMap {
 				const z = positionAttributeSquare.getZ(i);
 				let point = new THREE.Vector3(x, y, z);
 				this.square_surface_list[n].worldToLocal(point);						
-				point.applyQuaternion(q_inverse); // Apply quaternion to each point
+				point.applyQuaternion(q_inverse); // Apply quaternion to each point to make it horizontal
+
+				// Rotate the points around the center of the square to make it horizontal
+				const centerX = (point0.x + point2.x) / 2;
+				const centerY = (point0.y + point2.y) / 2;
+				const rotatedX = (point.x - centerX) * Math.cos(angle) - (point.y - centerY) * Math.sin(angle) + centerX;
+				const rotatedY = (point.x - centerX) * Math.sin(angle) + (point.y - centerY) * Math.cos(angle) + centerY;
+
+				point.x = rotatedX ;
+				point.y = rotatedY ;
+
 				const fpoint = this.toScreenPosition(point, kx, ky);
 				positionAttributeSquare.setXYZ(i, fpoint.x, fpoint.y, fpoint.z);
-				//positionAttributeSquare.setXYZ(i, point.x + map_square_size_x*ky, point.y - map_square_size_y*kx, point.z);
-				//positionAttributeSquare.setXYZ(i, point.x , point.y , point.z);
-				
 			}
+
 			positionAttributeSquare.needsUpdate = true;
+		}		
 
-		}
+		
 
-
-		for ( var j = 0; j < this.mapCoords.length; j++ ) {	
-
-			for (var n = 0;n<this.square_list.length;n++){
+		for (var n = 0;n<this.square_list.length;n++){
+			for ( var j = 0; j < this.mapCoords.length; j++ ) {					
 				// there are 5 points per square
 				const positionAttributeSquare = this.square_list[n].geometry.getAttribute( 'position' );
 
@@ -351,14 +373,10 @@ class LbMap {
 					planePoints.push(new THREE.Vector3(x, y, z));					
 				}
 
-				//var map_point = {fi: this.mapCoords[j].fi, theta: this.mapCoords[j].theta};
-
-				//console.log("Plane points " + planePoints.length + " "+ planePoints[0].x + " " + planePoints[0].y + " " + planePoints[0].z);
-				//console.log("Plane points " + planePoints);
 				const plane = new THREE.Plane().setFromCoplanarPoints(planePoints[0], planePoints[1], planePoints[2]);
 				const horizontalPlaneNormal = new THREE.Vector3(0, 0, 1);
 				const quaternion = new THREE.Quaternion().setFromUnitVectors(horizontalPlaneNormal, plane.normal);
-				//console.log('Quaternion:', quaternion);
+
 				let q_inverse = quaternion.invert();
 								
 				let kx = n%this.prjMapData.x;
@@ -367,30 +385,29 @@ class LbMap {
 				const vec_origin = new THREE.Vector3(0, 0, 0);
 				// go for the intersection
 				let raycaster = new THREE.Raycaster();
-				//let positions = line.geometry.attributes.position.array;
 
 				let point1 = new THREE.Vector3(vec_origin.x, vec_origin.y, vec_origin.z);
 				let point2 = new THREE.Vector3(vec.x, vec.y, vec.z);
 				
-				//raycaster.set(point1, point2.clone().sub(point1).normalize());
 				let direction = new THREE.Vector3().subVectors(point2, point1).normalize();
 				raycaster.set(point1, direction);
 
 				let intersects = raycaster.intersectObject(this.square_surface_list[n]);
 
 				if (intersects.length <= 0) {
-					//console.log('No intersection');
+
 				} else {
 					
 					let intersectionPoint = intersects[0].point;
-					//console.log('Intersection point:', intersectionPoint);
 					
 					this.square_surface_list[n].worldToLocal(intersectionPoint);
-					//console.log('Intersection point (local space):', intersectionPoint);
 					intersectionPoint.applyQuaternion(q_inverse);
-																											
-					vec.x = intersectionPoint.x;// + map_square_size_x*ky;
-					vec.y = intersectionPoint.y;// - map_square_size_y*kx;
+
+					// Lets rotate in plane of the square
+					let alpha = Math.atan2(planePoints[1].y - planePoints[0].y, planePoints[1].x - planePoints[0].x);
+																																
+					vec.x = intersectionPoint.x;
+					vec.y = intersectionPoint.y;
 					vec.z = intersectionPoint.z;
 												
 					const vdest = this.toScreenPosition(vec, kx, ky);
@@ -399,8 +416,8 @@ class LbMap {
 					//console.log("Intersection is inside the polygon : " +" "+ vdest.x + " " + vdest.y + " " + vdest.z);
 							
 					this.rfcolor = this.color;
-					//this.color.setHSL( j / this.mapCoords.length, 1.0, 0.5 );
-					this.color.setHSL( 1.0, 1.0, 0.5 );
+					this.color.setHSL( j / this.mapCoords.length, 1.0, 0.5 );
+					//this.color.setHSL( 1.0, 1.0, 0.5 );
 				
 					if (!regen){
 						
@@ -417,17 +434,15 @@ class LbMap {
 					}else{
 						this.right_friend.push( this.rfcolor.r,kx, ky );
 						this.colors.push( this.color.r, this.color.g, this.color.b );		
-						let x = (vindex/2+2*n)%(2*20);
-						if (x>30) x = (20 - x%20);
-						this.sizes.push( x/3.0 + 1 );
+						let x = (vindex+n)%(2*20);
+						if (x>20) x = (21 - x%20);
+						this.sizes.push( x/3.0 + 3 );
 						//this.sizes.push( 100);
 						this.pointsMap.push (vdest);
 						this.activeMapCoords.push (vindex,kx,ky,j);							
 					} 
 
 					vindex++;
-					
-					
 				}
 			}
 			//console.log("vindex " + vindex);
@@ -440,7 +455,7 @@ class LbMap {
 			this.geometryMap.setAttribute( 'color', new THREE.Float32BufferAttribute( this.colors, 3 ) );
 			this.geometryMap.setAttribute( 'right_friend', new THREE.Float32BufferAttribute( this.right_friend, 3 ).setUsage( THREE.DynamicDrawUsage ) );
 			this.geometryMap.setAttribute( 'size', new THREE.Float32BufferAttribute( this.sizes, 1 ).setUsage( THREE.DynamicDrawUsage ) );
-			console.log("New Vertices : " + this.geometryMap.attributes.position.count);
+			//console.log("New Vertices : " + this.geometryMap.attributes.position.count);
 		}else{
 			
 			//console.log("Total Vertices : " + this.geometryMap.attributes.position.count + "Required: " + vindex + 
@@ -721,7 +736,7 @@ class LbMap {
 			const line = new THREE.Line( geometry_line, new THREE.LineBasicMaterial( { color: 0x00ffff } ) );
 
 			this.radius_group.add(line);
-			console.log("Radius group len"+ this.radius_group.children.length);
+			//console.log("Radius group len"+ this.radius_group.children.length);
 		}
 
 		geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );

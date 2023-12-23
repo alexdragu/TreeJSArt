@@ -109,7 +109,7 @@ function getObjectString(entry) {
 
             if (text) {  // If the response is not empty
                 const data = JSON.parse(text);  // Parse the text as JSON
-				return data.coordinates;
+				return data;
             } else {
                 console.log('Empty response');
             }
@@ -160,9 +160,9 @@ function getObjectString(entry) {
 
 			// Randomizer
 			const attributes = [
-				{ name: 'winxcnt', range: [1, 30], variation: 1 , continuous: false},
-				{ name: 'winycnt', range: [1, 30], variation: 1 , continuous: false},
-				{ name: 'fact', range: [0.5, 1.0], variation: 0.01 , continuous: false},
+				{ name: 'winxcnt', range: [1, 15], variation: 0.03 , continuous: false},
+				{ name: 'winycnt', range: [1, 15], variation: 0.03 , continuous: false},
+				{ name: 'fact', range: [0.5, 1.0], variation: 0.01 , continuous: true},
 				{ name: 'defIndexfi', range: [Math.PI/R, 2*Math.PI], variation: Math.PI/(2*R) , continuous: true},
 				{ name: 'defIndextheta', range: [Math.PI/R, 2*Math.PI], variation: Math.PI/(2*R) , continuous: true}
 			];
@@ -171,6 +171,8 @@ function getObjectString(entry) {
 			let lastRenderTime;
 			let mapRawData;
 			let objCount = 0;
+
+			let countries = [];
 
 			init();
 			animate();
@@ -234,7 +236,7 @@ function getObjectString(entry) {
 				);
 				mesh3.position.z = 150;
 
-				cameraRig.add( mesh3 );
+				//cameraRig.add( mesh3 );
 
 				lbMap = new LbMap(scene, mesh, R,2*Math.PI/15.0,2*Math.PI/15.0,0.3*R,0.3*R,5,10,1.0,1.0, Math.PI, Math.PI);
 				lbMap.setScrSize(-0.5 * frustumSize * aspect , frustumSize );
@@ -286,11 +288,17 @@ function getObjectString(entry) {
 			
 			function pullRemoteObject (objId){
 				getObjectString(objId).then(mapRawData => {
-					//console.log("Map Raw Data Async: " + mapRawData);				
-					lbMap.initMapData(mapRawData);
-					lbMap.ReGenerateMap(true);
+					//console.log("Map Raw Data Async: " + mapRawData);	
+					const nameExists = countries.some(country => country.name === mapRawData.name);
 
-					cameraRig.add( lbMap.particlesMap );
+					if (!nameExists) {
+						countries.push({ name: mapRawData.name, data: mapRawData.coordinates });
+
+						lbMap.initMapData(mapRawData.coordinates);
+						lbMap.ReGenerateMap(true);
+
+						cameraRig.add( lbMap.particlesMap );
+					}
 				});
 			}
 
@@ -454,6 +462,13 @@ function getObjectString(entry) {
 						console.log("Random Object " + objId + " of : " + objCount);
 						pullRemoteObject (objId);
 						break;							
+					case 65: /*A*/
+
+						for (let objId = 1; objId < objCount; objId++) {
+							console.log("Pulling remote object " + objId + " of: " + (objCount - 1));
+							pullRemoteObject(objId);
+						}
+						break;
 
 				}
 				console.log(event.keyCode);
@@ -517,7 +532,7 @@ function getObjectString(entry) {
 				effectController.defIndextheta = lbMap.defIndextheta;				
 			}
 
-
+			var angle = 0;
 			function render() {
 
 				const currentRenderTime = performance.now();
@@ -538,6 +553,14 @@ function getObjectString(entry) {
 					}
 				}
 
+		var quaternion = new THREE.Quaternion();
+		angle += 0.001;
+
+		var center = new THREE.Vector3(0, 0, 0);
+		mesh.geometry.computeBoundingBox();
+		quaternion.setFromAxisAngle(new THREE.Vector3(0, 0, 1), angle);
+		mesh.quaternion.copy(quaternion);
+	
 if (go_auto){
 				// The movement				
 				generator.step(timeBetweenRenders/60);				

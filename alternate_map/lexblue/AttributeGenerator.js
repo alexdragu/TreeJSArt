@@ -19,10 +19,7 @@ class AttributeGenerator {
                     this.obj[attribute.name] = value;
                 }
             });
-
-
         }
-
     }
 
     move(){
