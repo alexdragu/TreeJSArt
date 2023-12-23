@@ -324,9 +324,11 @@ class LbMap {
 
 			let angle = Math.atan2(point1.x - point0.x, point1.y - point0.y);
 
-
 			let kx = n%this.prjMapData.x;
 			let ky = Math.floor(n/this.prjMapData.x);
+
+			const centerX = (point0.x + point2.x) / 2;
+			const centerY = (point0.y + point2.y) / 2;
 			
 			for (let i = 0; i < 5; i++) {
 				const x = positionAttributeSquare.getX(i);
@@ -337,8 +339,7 @@ class LbMap {
 				point.applyQuaternion(q_inverse); // Apply quaternion to each point to make it horizontal
 
 				// Rotate the points around the center of the square to make it horizontal
-				const centerX = (point0.x + point2.x) / 2;
-				const centerY = (point0.y + point2.y) / 2;
+
 				const rotatedX = (point.x - centerX) * Math.cos(angle) - (point.y - centerY) * Math.sin(angle) + centerX;
 				const rotatedY = (point.x - centerX) * Math.sin(angle) + (point.y - centerY) * Math.cos(angle) + centerY;
 
@@ -353,36 +354,59 @@ class LbMap {
 		}		
 
 		
+		const vec_origin = new THREE.Vector3(0, 0, 0);
 
 		for (var n = 0;n<this.square_list.length;n++){
+			// there are 5 points per square
+			const positionAttributeSquare = this.square_list[n].geometry.getAttribute( 'position' );			
+
+			const planePoints = [];
+			for (let i = 0; i < 5; i++) {
+				const x = positionAttributeSquare.getX(i);
+				const y = positionAttributeSquare.getY(i);
+				const z = positionAttributeSquare.getZ(i);
+				planePoints.push(new THREE.Vector3(x, y, z));					
+			}
+
+			const plane = new THREE.Plane().setFromCoplanarPoints(planePoints[0], planePoints[1], planePoints[2]);
+			const horizontalPlaneNormal = new THREE.Vector3(0, 0, 1);
+			const quaternion = new THREE.Quaternion().setFromUnitVectors(horizontalPlaneNormal, plane.normal);
+			let q_inverse = quaternion.invert();
+							
+			// computing the angle in plane of the square
+			// compute the angle in plane of the square
+			let point0 = new THREE.Vector3(planePoints[0].x, planePoints[0].y, planePoints[0].z);
+			let point1 = new THREE.Vector3(planePoints[1].x, planePoints[1].y, planePoints[1].z);
+			let point2 = new THREE.Vector3(planePoints[2].x, planePoints[2].y, planePoints[2].z);
+			this.square_surface_list[n].worldToLocal(point0);
+			point0.applyQuaternion(q_inverse); // Apply quaternion to each point
+
+			this.square_surface_list[n].worldToLocal(point1);
+			point1.applyQuaternion(q_inverse); // Apply quaternion to each point
+
+			this.square_surface_list[n].worldToLocal(point2);
+			point2.applyQuaternion(q_inverse); // Apply quaternion to each point
+
+			let angle = Math.atan2(point1.x - point0.x, point1.y - point0.y);
+
+
+
+
+			let kx = n%this.prjMapData.x;
+			let ky = Math.floor(n/this.prjMapData.x);
+
+			const centerX = (point0.x + point2.x) / 2;
+			const centerY = (point0.y + point2.y) / 2;
+
 			for ( var j = 0; j < this.mapCoords.length; j++ ) {					
-				// there are 5 points per square
-				const positionAttributeSquare = this.square_list[n].geometry.getAttribute( 'position' );
+
 
 				var x = this.R * Math.cos(this.mapCoords[j].theta) * Math.cos(this.mapCoords[j].fi);
 				var y = this.R * Math.cos(this.mapCoords[j].theta) * Math.sin(this.mapCoords[j].fi);
 				var z = this.R * Math.sin(this.mapCoords[j].theta);
 	
 				const vec = new THREE.Vector3(x,y,z);
-				
-				const planePoints = [];
-				for (let i = 0; i < 5; i++) {
-					const x = positionAttributeSquare.getX(i);
-					const y = positionAttributeSquare.getY(i);
-					const z = positionAttributeSquare.getZ(i);
-					planePoints.push(new THREE.Vector3(x, y, z));					
-				}
 
-				const plane = new THREE.Plane().setFromCoplanarPoints(planePoints[0], planePoints[1], planePoints[2]);
-				const horizontalPlaneNormal = new THREE.Vector3(0, 0, 1);
-				const quaternion = new THREE.Quaternion().setFromUnitVectors(horizontalPlaneNormal, plane.normal);
-
-				let q_inverse = quaternion.invert();
-								
-				let kx = n%this.prjMapData.x;
-				let ky = Math.floor(n/this.prjMapData.x);
-
-				const vec_origin = new THREE.Vector3(0, 0, 0);
 				// go for the intersection
 				let raycaster = new THREE.Raycaster();
 
@@ -403,21 +427,25 @@ class LbMap {
 					this.square_surface_list[n].worldToLocal(intersectionPoint);
 					intersectionPoint.applyQuaternion(q_inverse);
 
-					// Lets rotate in plane of the square
-					let alpha = Math.atan2(planePoints[1].y - planePoints[0].y, planePoints[1].x - planePoints[0].x);
-																																
 					vec.x = intersectionPoint.x;
 					vec.y = intersectionPoint.y;
 					vec.z = intersectionPoint.z;
-												
-					const vdest = this.toScreenPosition(vec, kx, ky);
-
-					//const vdest = vec;
-					//console.log("Intersection is inside the polygon : " +" "+ vdest.x + " " + vdest.y + " " + vdest.z);
 							
+				let point = vec;
+				// Rotate the points around the center of the square to make it horizontal
+				const rotatedX = (point.x - centerX) * Math.cos(angle) - (point.y - centerY) * Math.sin(angle) + centerX;
+				const rotatedY = (point.x - centerX) * Math.sin(angle) + (point.y - centerY) * Math.cos(angle) + centerY;
+
+				point.x = rotatedX ;
+				point.y = rotatedY ;
+
+
+					const vdest = this.toScreenPosition(point, kx, ky);
+
+//					const vdest = this.toScreenPosition(vec, kx, ky);
+
 					this.rfcolor = this.color;
 					this.color.setHSL( j / this.mapCoords.length, 1.0, 0.5 );
-					//this.color.setHSL( 1.0, 1.0, 0.5 );
 				
 					if (!regen){
 						
@@ -469,8 +497,8 @@ class LbMap {
 			return true;
 		}
 
-		//return new THREE.Points( this.geometryMap, new THREE.PointsMaterial( { color: 0x22AAFF } ) );
-		return new THREE.Points( this.geometryMap, this.shaderMaterial );
+		return new THREE.Points( this.geometryMap, new THREE.PointsMaterial( { color: 0x22AAFF } ) );
+		//return new THREE.Points( this.geometryMap, this.shaderMaterial );
 	}
 
 	// Function to check if a point is inside a polygon
