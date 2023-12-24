@@ -397,25 +397,25 @@ function getObjectString(entry) {
 					case 74: /*J*/
 						lbMap.defIndexv--;
 						//lbMap.updateMap();
-						lbMap.ReGenerateMap(false);
+						lbMap.ReGenerateMap(true);
 						//lbMap.updateWindows();
 						break;
 					case 85: /*U*/						
 						lbMap.defIndexv++;
 						//lbMap.updateMap();
-						lbMap.ReGenerateMap(false);
+						lbMap.ReGenerateMap(true);
 						//lbMap.updateWindows();
 						break;												
 					case 73: /*I*/						
 						lbMap.defIndexh++;
 						//lbMap.updateMap();
-						lbMap.ReGenerateMap(false);
+						lbMap.ReGenerateMap(true);
 						//lbMap.updateWindows();
 						break;						
 					case 75: /*K*/
 						lbMap.defIndexh--;
 						//lbMap.updateMap();
-						lbMap.ReGenerateMap(false);
+						lbMap.ReGenerateMap(true);
 						//lbMap.updateWindows();
 						break;
 					case 72: /*H*/						
@@ -587,7 +587,7 @@ if (go_auto){
 
 				lbMap.factory();
 //				console.log("Randomized " + lbMap.defIndexfi + " " + lbMap.defIndextheta + " " + lbMap.fact);
-				lbMap.ReGenerateMap(true);
+				lbMap.ReGenerateMap(false);
 }
 				const r = 0;
 

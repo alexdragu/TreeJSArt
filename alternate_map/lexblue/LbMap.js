@@ -193,18 +193,27 @@ class LbMap {
 		}
 	}
 
-	regenerateSphereMap(){
+	/**
+	 * 
+	 * This is not finished!! - regen not properly  implemented
+	 * 	 */
+	regenerateSphereMap(regen){
 		// clean-up
 		for (var n = 0;n<this.square_list.length;n++){								
-
-			this.square_list[n].geometry.dispose();
+			
+				this.square_list[n].geometry.dispose();
+				this.square_surface_list[n].geometry.dispose();	
+			
 			this.square_flat_list[n].geometry.dispose();
-			this.square_surface_list[n].geometry.dispose();	
 
-			this.square_group.remove(this.square_list[n]);						
+			
+				this.square_group.remove(this.square_list[n]);						
+				this.square_surface_group.remove(this.square_surface_list[n]);
+			
+			
 			this.square_flat_group.remove(this.square_flat_list[n]);
-			this.square_surface_group.remove(this.square_surface_list[n]);
 		}
+
 
 		this.square_list = [];
 		this.square_surface_list = [];
@@ -260,8 +269,8 @@ class LbMap {
 	
 
 		const vdest = new THREE.Vector3(
-			amp * ratio_x * (-vec.x - map_square_size_x*kx + map_square_size_x * (this.prjMapData.y -1)/2.0) , 
-			amp * ratio_y * (vec.y - map_square_size_y*ky + map_square_size_y * (this.prjMapData.x -1)/2.0) ,
+			amp * ratio_x * (-vec.x - map_square_size_x*(kx-this.defIndexv) + map_square_size_x * (this.prjMapData.y -1)/2.0) , 
+			amp * ratio_y * (vec.y - map_square_size_y*(ky-this.defIndexh) + map_square_size_y * (this.prjMapData.x -1)/2.0) ,
 			vec.z );
 
 /*
@@ -274,16 +283,14 @@ class LbMap {
 	}
 
 	// x,y number of squares
-	generateProjectionMap(regen){					
-		const map_square_size_x = this.prjMapData.square_size_x;
-		const map_square_size_y = this.prjMapData.square_size_y;	
-				
+	generateProjectionMap(regen){									
 		let positionAttribute;
 		let right_friendAttr;
 		let sizesAttr;
 		let colorAttr;
 
 		if (!regen){
+			
 			positionAttribute = this.particlesMap.geometry.getAttribute( 'position' );
 			// need to get right_friend and size
 			right_friendAttr = this.particlesMap.geometry.getAttribute( 'right_friend' );
@@ -304,7 +311,6 @@ class LbMap {
 
 		for (var n = 0;n<this.square_list.length;n++){
 			// there are 5 points per square
-			//const positionAttributeSquare = this.square_list[n].geometry.getAttribute( 'position' );			
 			const positionAttributeSquare = this.square_flat_list[n].geometry.getAttribute( 'position' );
 
 			const planePoints = [];
@@ -336,10 +342,9 @@ class LbMap {
 
 			let angle = Math.atan2(point2.x - point1.x, point2.y - point1.y);
 
-			let ky = Math.floor(n/this.prjMapData.y);
-			let kx = n%this.prjMapData.y;
-
-			//console.log("n "+ n + " kx " + kx + " ky " + ky + " len " + this.square_list.length) ;
+			let ky = this.defIndexh + Math.floor(n/this.prjMapData.y);
+			let kx = this.defIndexv + n%this.prjMapData.y;
+			
 
 			const centerX = (point0.x + point2.x) / 2;
 			const centerY = (point0.y + point2.y) / 2;
@@ -353,21 +358,20 @@ class LbMap {
 				point.applyQuaternion(q_inverse); // Apply quaternion to each point to make it horizontal
 
 				// Rotate the points around the center of the square to make it horizontal
-
 				const rotatedX = (point.x - centerX) * Math.cos(angle) - (point.y - centerY) * Math.sin(angle) + centerX;
 				const rotatedY = (point.x - centerX) * Math.sin(angle) + (point.y - centerY) * Math.cos(angle) + centerY;
-
 				point.x = rotatedX ;
 				point.y = rotatedY ;
 
+				// Move it on display
 				const fpoint = this.toScreenPosition(point, kx, ky);
+
 				positionAttributeSquare.setXYZ(i, fpoint.x, fpoint.y, fpoint.z);
 			}
 
 			positionAttributeSquare.needsUpdate = true;
 
 			for ( var j = 0; j < this.mapCoords.length; j++ ) {					
-
 
 				var x = this.R * Math.cos(this.mapCoords[j].theta) * Math.cos(this.mapCoords[j].fi);
 				var y = this.R * Math.cos(this.mapCoords[j].theta) * Math.sin(this.mapCoords[j].fi);
@@ -399,28 +403,26 @@ class LbMap {
 					vec.y = intersectionPoint.y;
 					vec.z = intersectionPoint.z;
 							
-				let point = vec;
-				// Rotate the points around the center of the square to make it horizontal
-				const rotatedX = (point.x - centerX) * Math.cos(angle) - (point.y - centerY) * Math.sin(angle) + centerX;
-				const rotatedY = (point.x - centerX) * Math.sin(angle) + (point.y - centerY) * Math.cos(angle) + centerY;
-
-				point.x = rotatedX ;
-				point.y = rotatedY ;
-
-
+					let point = vec;
+					// Rotate the points around the center of the square to make it horizontal
+					const rotatedX = (point.x - centerX) * Math.cos(angle) - (point.y - centerY) * Math.sin(angle) + centerX;
+					const rotatedY = (point.x - centerX) * Math.sin(angle) + (point.y - centerY) * Math.cos(angle) + centerY;
+					point.x = rotatedX ;
+					point.y = rotatedY ;
 					const vdest = this.toScreenPosition(point, kx, ky);
-
-//					const vdest = this.toScreenPosition(vec, kx, ky);
 
 					this.rfcolor = this.color;
 					this.color.setHSL( j / this.mapCoords.length, 1.0, 0.5 );
 				
-					if (!regen){
-						
+					if (!regen){											
 						positionAttribute.setXYZ( vindex, vdest.x, vdest.y, vdest.z);
-						colorAttr.setXYZ( vindex, this.color.r, this.color.g, this.color.b );
+						colorAttr.setXYZ( vindex, 1, 1, 1 );
 						right_friendAttr.setXYZ( vindex, this.rfcolor.r,kx, ky );
-						sizesAttr.setXYZ( vindex, 100 );
+
+						let x = (vindex+n)%(2*30);
+						if (x>30) x = (31 - x%30);						
+
+						sizesAttr.setXYZ( vindex, x );
 
 						if (vindex > positionAttribute.count){
 							console.log("vindex > positionAttribute.count");
@@ -429,10 +431,10 @@ class LbMap {
 
 					}else{
 						this.right_friend.push( this.rfcolor.r,kx, ky );
-						this.colors.push( this.color.r, this.color.g, this.color.b );		
-						let x = (vindex+n)%(2*20);
-						if (x>20) x = (21 - x%20);
-						this.sizes.push( x/3.0 + 3 );
+						this.colors.push( this.color.r, this.color.r, this.color.r );		
+						let x = (vindex+n)%(2*30);
+						if (x>30) x = (31 - x%30);
+						this.sizes.push( x/4.0 + 1 );
 						//this.sizes.push( 100);
 						this.pointsMap.push (vdest);
 						this.activeMapCoords.push (vindex,kx,ky,j);							
@@ -449,6 +451,7 @@ class LbMap {
 			this.geometryMap.setAttribute( 'color', new THREE.Float32BufferAttribute( this.colors, 3 ) );
 			this.geometryMap.setAttribute( 'right_friend', new THREE.Float32BufferAttribute( this.right_friend, 3 ).setUsage( THREE.DynamicDrawUsage ) );
 			this.geometryMap.setAttribute( 'size', new THREE.Float32BufferAttribute( this.sizes, 1 ).setUsage( THREE.DynamicDrawUsage ) );
+			console.log("vindex " + vindex + "out of " + this.geometryMap.attributes.position.count);
 		}else{		
 			this.particlesMap.geometry.setDrawRange( 0, vindex )
 			positionAttribute.needsUpdate = true;
@@ -456,11 +459,12 @@ class LbMap {
 			right_friendAttr.needsUpdate = true; 
 			//this.particlesMap.geometry.computeBoundingBox();
 			//this.particlesMap.geometry.computeBoundingSphere();
+			console.log("vindex Update" + vindex + "out of " + this.particlesMap.geometry.attributes.position.count);
 			return true;
 		}
 
-		return new THREE.Points( this.geometryMap, new THREE.PointsMaterial( { color: 0x22AAFF } ) );
-		//return new THREE.Points( this.geometryMap, this.shaderMaterial );
+		//return new THREE.Points( this.geometryMap, new THREE.PointsMaterial( { color: 0x22AAFF } ) );
+		return new THREE.Points( this.geometryMap, this.shaderMaterial );
 	}
 
 	// Function to check if a point is inside a polygon
@@ -538,11 +542,11 @@ class LbMap {
 
 
 
-	generateSquare(i,j,vstep,hstep){		
+	generateSquare(i,j,vstep,hstep, definndexh, defindexv){		
 						
 		const points = [];
 		const geometry = new THREE.BufferGeometry();
-		const geometry_flat = new THREE.BufferGeometry();
+		
 
 		var x,y,z;				
 		var vec;
@@ -608,7 +612,7 @@ class LbMap {
 
 		for (var i = 0;i < this.prjMapData.x; i++){
 			for (var j = 0;j < this.prjMapData.y; j++){
-				this.generateSquare(i , j ,vstep,hstep);
+				this.generateSquare(i + this.defIndexh, j + this.defIndexv ,vstep,hstep );
 			}
 		}		
 
@@ -616,12 +620,14 @@ class LbMap {
 		for (var n = 0;n<this.square_list.length;n++){								
 			square_group.add(this.square_list[n]);
 			this.square_surface_group.add(this.square_surface_list[n]);	
+
 			this.square_flat_group.add(this.square_flat_list[n]);			
 		}
 
 		this.square_flat_group.position.z = 250;
 		return square_group;
 	}
+	
 
 	loadRandomMap1(){
 		// add another 1000 particles on the sphere
@@ -707,6 +713,10 @@ class LbMap {
 			this.regeneratemap(regen);					
 			this.scene.add( this.particlesMap );
 		} else {
+
+			if (!hide_sphere)
+				this.regenerateSphereMap(true);
+
 			if (!this.regeneratemap(regen)){				
 				console.log("Force regen Map");
 				this.ReGenerateMap(true);
