@@ -255,14 +255,21 @@ class LbMap {
 		const amp = this.prjMapData.amp;
 		const map_square_size_x = this.prjMapData.square_size_x;
 		const map_square_size_y = this.prjMapData.square_size_y;		
-		const ratio_x = this.out_scr_w/(map_square_size_x * this.prjMapData.x);
-		const ratio_y = this.out_scr_h/(map_square_size_y * this.prjMapData.y);
+		const ratio_x = this.out_scr_w/(map_square_size_x * this.prjMapData.y);
+		const ratio_y = this.out_scr_h/(map_square_size_y * this.prjMapData.x);
 	
 
 		const vdest = new THREE.Vector3(
-			amp * ratio_x * (vec.x + map_square_size_x*kx - map_square_size_x * (this.prjMapData.x -1)/2.0) , 
-			amp * ratio_y * (vec.y - map_square_size_y*ky + map_square_size_y * (this.prjMapData.y -1)/2.0) ,
+			amp * ratio_x * (vec.x + map_square_size_x*kx - map_square_size_x * (this.prjMapData.y -1)/2.0) , 
+			amp * ratio_y * (vec.y - map_square_size_y*ky + map_square_size_y * (this.prjMapData.x -1)/2.0) ,
 			vec.z );
+
+/*
+			const vdest = new THREE.Vector3(
+				amp * ratio_x * (vec.x + map_square_size_x*kx ) , 
+				amp * ratio_y * (vec.y - map_square_size_y*ky ) ,
+				vec.z );
+*/
 		return vdest;
 	}
 
@@ -329,8 +336,10 @@ class LbMap {
 
 			let angle = Math.atan2(point2.x - point1.x, point2.y - point1.y);
 
-			let kx = n%this.prjMapData.x;
 			let ky = Math.floor(n/this.prjMapData.y);
+			let kx = n%this.prjMapData.y;
+
+			//console.log("n "+ n + " kx " + kx + " ky " + ky + " len " + this.square_list.length) ;
 
 			const centerX = (point0.x + point2.x) / 2;
 			const centerY = (point0.y + point2.y) / 2;
