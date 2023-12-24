@@ -260,7 +260,7 @@ class LbMap {
 	
 
 		const vdest = new THREE.Vector3(
-			amp * ratio_x * (vec.x + map_square_size_x*kx - map_square_size_x * (this.prjMapData.y -1)/2.0) , 
+			amp * ratio_x * (-vec.x - map_square_size_x*kx + map_square_size_x * (this.prjMapData.y -1)/2.0) , 
 			amp * ratio_y * (vec.y - map_square_size_y*ky + map_square_size_y * (this.prjMapData.x -1)/2.0) ,
 			vec.z );
 
