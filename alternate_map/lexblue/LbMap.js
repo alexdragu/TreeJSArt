@@ -542,7 +542,7 @@ class LbMap {
 						positionAttribute.setXYZ( vindex, vdest.x, vdest.y, vdest.z);						
 
 						//if (kx%this.prjMapData.x == 2 && ky%this.prjMapData.y == 2){
-						if ((kx > 0 && kx<this.prjMapData.y - 1000) && (ky > 0 && ky<this.prjMapData.x - 1)){
+						if ((kx > 0 && kx<this.prjMapData.y - 1) && (ky > 0 && ky<this.prjMapData.x - 1)){
 							colorAttr.setXYZ( vindex,  this.color.r, this.color.g, this.color.b  );
 							right_friendAttr0.setXYZ( vindex, this.rfcolor.r,kx, ky );
 							right_friendAttr1.setXYZ( vindex, 10*Math.sin(vdest.x*Math.PI/this.prjMapData.square_size_x),10*Math.cos(Math.PI*vdest.y*0.5/this.prjMapData.square_size_y), 0 );

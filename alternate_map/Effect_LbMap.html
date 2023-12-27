@@ -53,7 +53,7 @@
 				//gl_PointSize = 1.0 * size * ( 300.0 / -mvPosition.z );
 				// increase the size of the points
 				//gl_PointSize = 1.0 * size *(1.0 + 1.0 * vRightFriend1.x* vRightFriend1.y/50.0);//* ( 300.0 / -mvPosition.z );
-				gl_PointSize = 1.0 * size *(2.0 + 1.0 * vRightFriend1.x* vRightFriend1.y/20.0);//* ( 300.0 / -mvPosition.z );
+				gl_PointSize = 1.0 * size *(2.0 + 1.0 * vRightFriend1.x* vRightFriend1.y/18.0);//* ( 300.0 / -mvPosition.z );
 
 				//gl_Position = projectionMatrix * mvPosition;
 				gl_Position = projectionMatrix * (mvPosition + 1.8*vec4(vRightFriend1,0.0));				
