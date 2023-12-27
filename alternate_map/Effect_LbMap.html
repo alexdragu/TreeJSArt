@@ -21,21 +21,42 @@
 		<script type="x-shader/x-vertex" id="vertexshader">
 
 			attribute float size;
-			attribute vec3 right_friend;
+			attribute vec3 right_friend0;
+			attribute vec3 right_friend1;
+			attribute vec3 right_friend2;
+			attribute vec3 right_friend3;
+			attribute vec3 right_friend4;
 
 			varying vec3 vColor;
-			varying vec3 vRightFriend;
+			varying vec3 vRightFriend0;
+			varying vec3 vRightFriend1;
+			varying vec3 vRightFriend2;
+			varying vec3 vRightFriend3;
+			varying vec3 vRightFriend4;
 
 			void main() {
 
 				vColor = color;
-				vRightFriend = right_friend;
 
-				vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+				vRightFriend0 = right_friend0;
+				vRightFriend1 = right_friend1;
+				vRightFriend2 = right_friend2;
+				vRightFriend3 = right_friend3;
+				vRightFriend4 = right_friend4;
+				
+				
 
-				gl_PointSize = 1.0 * size * ( 300.0 / -mvPosition.z );
+				//vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+				//vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+				vec4 mvPosition = modelViewMatrix * ((vec4( position, 1.0 ) + vec4(vRightFriend2,0.0) + vec4(vRightFriend3,0.0) + vec4(vRightFriend4,0.0)/4.0));
 
-				gl_Position = projectionMatrix * mvPosition;
+				//gl_PointSize = 1.0 * size * ( 300.0 / -mvPosition.z );
+				// increase the size of the points
+				//gl_PointSize = 1.0 * size *(1.0 + 1.0 * vRightFriend1.x* vRightFriend1.y/50.0);//* ( 300.0 / -mvPosition.z );
+				gl_PointSize = 1.0 * size *(2.0 + 1.0 * vRightFriend1.x* vRightFriend1.y/20.0);//* ( 300.0 / -mvPosition.z );
+
+				//gl_Position = projectionMatrix * mvPosition;
+				gl_Position = projectionMatrix * (mvPosition + 1.8*vec4(vRightFriend1,0.0));				
 
 			}
 
@@ -46,16 +67,25 @@
 			uniform sampler2D pointTexture;
 
 			varying vec3 vColor;
-			varying vec3 vRightFriend;
+			varying vec3 vRightFriend0;
+			varying vec3 vRightFriend1;
+			varying vec3 vRightFriend2;
+			varying vec3 vRightFriend3;
+			varying vec3 vRightFriend4;
 
 			void main() {
 
-				gl_FragColor = vec4( vColor*0.5, 1.0 ) + vec4(vRightFriend*0.5, 0.1);
+				gl_FragColor = vec4( vColor*0.5, 0.8 ) ;//+ vec4(vRightFriend0*0.5, 0.1);
 				gl_FragColor = gl_FragColor * texture2D( pointTexture, gl_PointCoord );
+				//gl_FragColor = vec4( vColor*0.5, 0.5 ) + texture2D( pointTexture, gl_PointCoord );
+				//gl_FragColor = texture2D( pointTexture, gl_PointCoord );
 				//gl_FragColor = gl_FragColor * (1.0-texture2D( pointTexture, gl_PointCoord )) * 1.0/(gl_PointCoord.y * gl_PointCoord.y);
 				//gl_FragColor = gl_FragColor * (((-0.5+gl_PointCoord.x)*(-0.5+gl_PointCoord.x) + (-0.5+gl_PointCoord.y)*(-0.5+gl_PointCoord.y)))/1.0 ;
 				//gl_FragColor = gl_FragColor * (((-0.5+gl_PointCoord.x)*(-0.5+gl_PointCoord.x) + (-0.5+gl_PointCoord.y)*(-0.5+gl_PointCoord.y)))/1.0 + vec4(vRightFriend*0.5, 1.0);
 				//gl_FragColor = gl_FragColor * (((-0.5+gl_PointCoord.x)*(-0.5+gl_PointCoord.x) + (-0.5+gl_PointCoord.y)*(-0.5+gl_PointCoord.y)))/1.0 + vec4(vRightFriend*0.5, 0.1);
+				//gl_FragColor =   texture2D( pointTexture, gl_PointCoord );
+				gl_FragColor =  gl_FragColor;// + gl_FragColor * vec4(vRightFriend1,1.0)/10.0;
+
 
 			}
 
@@ -297,7 +327,7 @@ function getObjectString(entry) {
 						lbMap.initMapData(mapRawData.coordinates);
 						lbMap.ReGenerateMap(true);
 
-						cameraRig.add( lbMap.particlesMap );
+						//cameraRig.add( lbMap.particlesMap );
 					}
 				});
 			}
@@ -469,6 +499,10 @@ function getObjectString(entry) {
 							pullRemoteObject(objId);
 						}
 						break;
+					case 90:
+						lbMap.updateMapCoords();	
+						lbMap.ReGenerateMap(false);
+					break;
 
 				}
 				console.log(event.keyCode);
@@ -589,6 +623,9 @@ if (go_auto){
 //				console.log("Randomized " + lbMap.defIndexfi + " " + lbMap.defIndextheta + " " + lbMap.fact);
 				lbMap.ReGenerateMap(false);
 }
+
+				lbMap.moveParticleSystem(timeBetweenRenders/60);
+
 				const r = 0;
 
 				// control panel
