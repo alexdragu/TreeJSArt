@@ -14,7 +14,7 @@
 	<body>
 		<canvas class="webgl"></canvas>
 
-		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a>  BL Map<br/>
+		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a>  BL Map v0.61<br/>
 		<b>O</b> orthographic <b>P</b> perspective <b>H</b> hide title <b>
 		</div>
 
@@ -48,7 +48,11 @@
 
 				//vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
 				//vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
-				vec4 mvPosition = modelViewMatrix * ((vec4( position, 1.0 ) + vec4(vRightFriend2,0.0) + vec4(vRightFriend3,0.0) + vec4(vRightFriend4,0.0)/4.0));
+				vec4 mvFriends = ( vec4(vRightFriend2,0.0) + vec4(vRightFriend3,0.0) + vec4(vRightFriend4,0.0)/3.0);
+				mvFriends = vec4( position, 1.0 ) ;//+ mvFriends/3.0;
+				mvFriends.z = position.z;	
+				vec4 mvPosition = modelViewMatrix * (mvFriends);
+				
 
 				//gl_PointSize = 1.0 * size * ( 300.0 / -mvPosition.z );
 				// increase the size of the points
@@ -94,7 +98,7 @@
 		<script type="importmap">
 			{
 				"imports": {
-					"three": "../../build/three.module.js",
+					"three": "../../../build/three.module.js",
 					"three/addons/": "./jsm/",
 					"three/lexblue/": "./lexblue/"
 				}
@@ -210,7 +214,7 @@ function getObjectString(entry) {
 			// the sphere
 			function init() {
 				lastRenderTime = performance.now();
-				console.log ("v 0.6");
+
 				hdiv = document.getElementById("info");
 				
 				container = document.createElement( 'div' );
@@ -499,10 +503,15 @@ function getObjectString(entry) {
 							pullRemoteObject(objId);
 						}
 						break;
-					case 90:
+					case 90: /*Z*/
 						lbMap.updateMapCoords();	
 						lbMap.ReGenerateMap(false);
 					break;
+					case 88: /*X*/
+						// Add your code here for key Xw
+						lbMap.ReGenerateMap(true);
+						break;
+					case 67: /*C*/
 
 				}
 				console.log(event.keyCode);
@@ -594,7 +603,7 @@ function getObjectString(entry) {
 		mesh.geometry.computeBoundingBox();
 		quaternion.setFromAxisAngle(new THREE.Vector3(0, 0, 1), angle);
 		mesh.quaternion.copy(quaternion);
-	
+
 if (go_auto){
 				// The movement				
 				generator.step(timeBetweenRenders/60);				
@@ -624,7 +633,8 @@ if (go_auto){
 				lbMap.ReGenerateMap(false);
 }
 
-				lbMap.moveParticleSystem(timeBetweenRenders/60);
+lbMap.moveParticleSystem(timeBetweenRenders/60);
+				
 
 				const r = 0;
 
