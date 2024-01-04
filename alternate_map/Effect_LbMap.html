@@ -633,7 +633,7 @@ if (go_auto){
 				lbMap.ReGenerateMap(false);
 }
 
-lbMap.moveParticleSystem(timeBetweenRenders/60);
+lbMap.moveParticleSystem(timeBetweenRenders/60,2);
 				
 
 				const r = 0;
@@ -748,7 +748,7 @@ lbMap.moveParticleSystem(timeBetweenRenders/60);
 				cameraRig.lookAt( mesh3.position );
 				
 				//renderer.autoClear = false;
-				renderer.clear(true,true,true);
+				renderer.clear(true,false,true);
 				//renderer.clear(true,true,true);
 
 				controls.update();
