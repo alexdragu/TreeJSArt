@@ -487,16 +487,12 @@ class LbMap {
 			this.mapCoords[j].z = z;
 
 			this.color.setHSL( _index / this.maxvindex, 0.9, 0.9 );
-						// fragment part
-					//	if ((kx > 0 && kx<this.prjMapData.y - 1) && (ky > 0 && ky<this.prjMapData.x - 1)){
-							colorAttr.setXYZ( _index,  this.color.r, this.color.g, this.color.b  );
-							right_friendAttr0.setXYZ( _index, this.rfcolor.r,kx, ky );
-							right_friendAttr1.setXYZ( _index, 4*Math.sin(x*Math.PI/this.prjMapData.square_size_x)/20.0,4*Math.cos(Math.PI*y*0.5/this.prjMapData.square_size_y)/12.0, 0 );
-					//	}else{
-					//		colorAttr.setXYZ( vindex,  0.8, 0.8, 1.0  );
-					//		right_friendAttr0.setXYZ(_index,0,0,0);
-					//		right_friendAttr1.setXYZ(_index,0,0,0);
-					//	}
+
+			// fragment part
+			colorAttr.setXYZ( _index,  this.color.r, this.color.g, this.color.b  );
+			right_friendAttr0.setXYZ( _index, this.rfcolor.r,kx, ky );
+			right_friendAttr1.setXYZ( _index, 4*Math.sin(x*Math.PI/this.prjMapData.square_size_x)/20.0,4*Math.cos(Math.PI*y*0.5/this.prjMapData.square_size_y)/12.0, 0 );
+
 
 		});
 		positionAttribute.needsUpdate = true;
@@ -510,12 +506,14 @@ class LbMap {
 
 	}
 
+	delaunyInitialized = false;
 
 	delaunatorMap(){
-					// Delauny triangulation
+			// Delauny triangulation
 			// triangulate x, z
 			
-			const pointsMapArray = this.particlesMap.geometry.getAttribute('position').array;	
+			const pointsMapArray = this.particlesMap.geometry.getAttribute('position').array;
+
 			const colorAttr = this.particlesMap.geometry.getAttribute( 'color' );	
 
 			const right_friendAttr0 = this.particlesMap.geometry.getAttribute( 'right_friend0' );
@@ -534,45 +532,97 @@ class LbMap {
 				const z = pointsMapArray[i + 2];
 				pointsMap.push(new THREE.Vector3(x, y, z));
 			}
-			const geometryMap = new THREE.BufferGeometry().setFromPoints( pointsMap );
-			geometryMap.setAttribute( 'color', colorAttr );
 
-			geometryMap.setAttribute( 'right_friend0', right_friendAttr0 );
-			geometryMap.setAttribute( 'right_friend1', right_friendAttr1 );
-			geometryMap.setAttribute( 'right_friend2', right_friendAttr2 );
-			geometryMap.setAttribute( 'right_friend3', right_friendAttr3 );
-			geometryMap.setAttribute( 'right_friend4', right_friendAttr4 );
-						
-			console.log("pointsMap " + pointsMap.length);
-			
 			var indexDelaunay = Delaunator.from(
 				pointsMap.map((v, i) => {
-				//console.log (i+ " " + [v.x, v.y]);
 				return [v.x, v.y];
 				})
 			);
-			
-			var meshIndex = []; // delaunay index => three.js index
-			for (let i = 0; i < indexDelaunay.triangles.length; i++){
-			  meshIndex.push(indexDelaunay.triangles[i]);
-			}
-			
-			geometryMap.setIndex(meshIndex); // add three.js index to the existing geometry
-			geometryMap.computeVertexNormals();
 
-//			if (!this.hide_delaunay)
+			if (!this.delaunyInitialized) {
+				const geometryMap = new THREE.BufferGeometry().setFromPoints( pointsMap );
+				geometryMap.setAttribute( 'color', colorAttr );
+
+				geometryMap.setAttribute( 'right_friend0', right_friendAttr0 );
+				geometryMap.setAttribute( 'right_friend1', right_friendAttr1 );
+				geometryMap.setAttribute( 'right_friend2', right_friendAttr2 );
+				geometryMap.setAttribute( 'right_friend3', right_friendAttr3 );
+				geometryMap.setAttribute( 'right_friend4', right_friendAttr4 );
+							
+				console.log("pointsMap " + pointsMap.length);
+												
+				var meshIndex = []; 
+				for (let i = 0; i < indexDelaunay.triangles.length; i++){
+					meshIndex.push(indexDelaunay.triangles[i]);	
+					//console.log("BIN "+ indexDelaunay.triangles[i]);
+				}
+
+				geometryMap.setIndex(meshIndex); // add three.js index to the existing geometry
+				geometryMap.computeVertexNormals();
+	
 				this.scene.remove(this.delaunyMap);
 
-			this.delaunyMap = new THREE.Mesh(
-				geometryMap, // re-use the existing geometry
-				this.shaderMaterialSurface,
-			);
-			
-			
-			if (!this.hide_delaunay)			
-				this.scene.add(this.delaunyMap);
+				this.delaunyMap = new THREE.Mesh(
+					geometryMap, // re-use the existing geometry
+					this.shaderMaterialSurface,
+				);
+				
+				
+				if (!this.hide_delaunay)			
+					this.scene.add(this.delaunyMap);
 
-			this.delaunyMap.position.z = 260;
+				this.delaunyMap.position.z = 260;
+
+				this.delaunyInitialized = true;
+			}else{
+				// update the delaunyMap
+				
+				//const indexes = this.delaunyMap.geometry.getIndex();
+
+//				console.log("indexes " + indexes);
+//				console.log("indexes " + indexes[0]+indexes[1]+indexes[2]);
+
+				const positions = this.delaunyMap.geometry.getAttribute('position');
+				const geometryMap = this.delaunyMap.geometry;
+
+//				const indexes = new Uint32Array(indexDelaunay.triangles); // Create a new Uint32Array for indexes
+
+				for (let i = 0; i < pointsMapArray.length; i += 3) {
+					positions.setXYZ(i / 3, pointsMapArray[i], pointsMapArray[i + 1], pointsMapArray[i + 2]);
+				}
+
+//				this.delaunyMap.geometry.setIndex(new THREE.BufferAttribute(indexes, 1)); // Set the indexes using the new Uint32Array
+
+// Get the index attribute
+const indices = this.delaunyMap.geometry.getIndex();
+
+// Update the indices
+for (let i = 0; i < indexDelaunay.triangles.length; i++) {
+    indices.setX(i, indexDelaunay.triangles[i]);
+}
+
+
+
+				//geometryMap.setIndex(indexes); // add three.js index to the existing geometry
+				//this.delaunyMap.geometry.setIndex(indexes); // add three.js index to the existing geometry
+/*
+				geometryMap.computeVertexNormals();
+				geometryMap.setAttribute( 'color', colorAttr );
+
+				geometryMap.setAttribute( 'right_friend0', right_friendAttr0 );
+				geometryMap.setAttribute( 'right_friend1', right_friendAttr1 );
+				geometryMap.setAttribute( 'right_friend2', right_friendAttr2 );
+				geometryMap.setAttribute( 'right_friend3', right_friendAttr3 );
+				geometryMap.setAttribute( 'right_friend4', right_friendAttr4 );			
+*/				
+
+				//this.delaunyMap.geometry.setDrawRange( 0, this.maxvindex )				
+				indices.needsUpdate = true;
+				positions.needsUpdate = true;
+				
+				
+			}
+
 	}
 
 	// This generates the wold map
@@ -584,7 +634,7 @@ class LbMap {
 
 		let sizesAttr;
 		let colorAttr;
-		let regen = true;
+		let regen = regen_;
 		if (!regen){
 			
 			positionAttribute = this.particlesMap.geometry.getAttribute( 'position' );
@@ -597,8 +647,9 @@ class LbMap {
 
 			sizesAttr = this.particlesMap.geometry.getAttribute( 'size' );
 			colorAttr = this.particlesMap.geometry.getAttribute( 'color' );			
-
 		}
+
+		
 
 		this.right_friend0 = [];
 		this.right_friend1 = [];
@@ -790,7 +841,8 @@ class LbMap {
 			}
 		}		
 
-				
+		
+
 		if (regen){			
 			this.geometryMap.setFromPoints( this.pointsMap );
 			this.geometryMap.setAttribute( 'color', new THREE.Float32BufferAttribute( this.colors, 3 ) );
@@ -805,10 +857,12 @@ class LbMap {
 			console.log("vindex " + vindex + "out of " + this.geometryMap.attributes.position.count);
 			this.maxvindex = vindex;
 			this.activeInitialized = true;
+			this.delaunyInitialized = false;
 
 		}else{		
 			this.particlesMap.geometry.setDrawRange( 0, vindex )
 			this.maxvindex = vindex;
+		
 			positionAttribute.needsUpdate = true;
 			colorAttr.needsUpdate = true;
 			sizesAttr.needsUpdate = true;
