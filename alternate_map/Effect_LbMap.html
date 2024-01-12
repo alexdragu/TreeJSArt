@@ -14,7 +14,7 @@
 	<body>
 		<canvas class="webgl"></canvas>
 
-		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a>  BL Map v0.71<br/>
+		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a>  BL Map v0.72<br/>
 		<b>O</b> orthographic <b>P</b> perspective <b>H</b> hide title <b>
 		</div>
 
@@ -96,7 +96,7 @@
 				//gl_FragColor = gl_FragColor * (((-0.5+gl_PointCoord.x)*(-0.5+gl_PointCoord.x) + (-0.5+gl_PointCoord.y)*(-0.5+gl_PointCoord.y)))/1.0 + vec4(vRightFriend*0.5, 1.0);
 				//gl_FragColor = gl_FragColor * (((-0.5+gl_PointCoord.x)*(-0.5+gl_PointCoord.x) + (-0.5+gl_PointCoord.y)*(-0.5+gl_PointCoord.y)))/1.0 + vec4(vRightFriend*0.5, 0.1);
 				//gl_FragColor =   texture2D( pointTexture, gl_PointCoord );
-				gl_FragColor =  gl_FragColor;// + gl_FragColor * vec4(vRightFriend1,1.0)/10.0;
+				//gl_FragColor =  gl_FragColor;// + gl_FragColor * vec4(vRightFriend1,1.0)/10.0;
 
 
 			}
@@ -655,6 +655,8 @@ function getObjectString(entry) {
 						lbMap.ReGenerateMap(true);
 						break;
 					case 67: /*C*/
+						lbMap.delaunyInitialized = false;
+						break;
 
 				}
 				console.log(event.keyCode);

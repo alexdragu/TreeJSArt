@@ -354,7 +354,9 @@ class LbMap {
 			return aDistance - bDistance;
 		});
 		*/
-		
+
+
+// best
 		MapCoordsOrdered.sort(function(a, b) {
 			const aDistance = Math.sqrt(
 				(a.fi - b.fi) * (a.fi - b.fi) 
@@ -362,22 +364,23 @@ class LbMap {
 				);
 			return aDistance ;
 		});
-		
 
-	/*	
+
+/*
 		MapCoordsOrdered.sort(function(a, b) {
 			const aDistance = Math.sqrt((a.x-b.x)* (a.x-b.x) 
 								+ (a.y-b.y)* (a.y-b.y));
 			return aDistance ;
 		});
-	*/	
-	/*	
+*/
+
+/*
 		MapCoordsOrdered.sort(function(a, b) {
 			const aDistance = Math.sqrt(a.x * a.x + a.y * a.y);
 			const bDistance = Math.sqrt(b.x * b.x + b.y * b.y);
 			return aDistance - bDistance;
 		});
-	*/	
+*/
 
 
 		MapCoordsOrdered.forEach((coord, index) => {
@@ -417,7 +420,7 @@ class LbMap {
 
 		positionAttribute = this.particlesMap.geometry.getAttribute( 'position' );
 		// need to get right_friend and size
-		//sizesAttr = this.particlesMap.geometry.getAttribute( 'size' );
+		sizesAttr = this.particlesMap.geometry.getAttribute( 'size' );
 		colorAttr = this.particlesMap.geometry.getAttribute( 'color' );	
 		right_friendAttr0 = this.particlesMap.geometry.getAttribute( 'right_friend0' );
 		right_friendAttr1 = this.particlesMap.geometry.getAttribute( 'right_friend1' );
@@ -486,23 +489,29 @@ class LbMap {
 			this.mapCoords[j].y = y;
 			this.mapCoords[j].z = z;
 
-			this.color.setHSL( _index / this.maxvindex, 0.9, 0.9 );
+			this.color.setHSL(j / this.maxvindex, 0.5, 0.7 );
 
 			// fragment part
+			//colorAttr.setXYZ( _index,  0.0, 1.0, 0.0  );
 			colorAttr.setXYZ( _index,  this.color.r, this.color.g, this.color.b  );
 			right_friendAttr0.setXYZ( _index, this.rfcolor.r,kx, ky );
 			right_friendAttr1.setXYZ( _index, 4*Math.sin(x*Math.PI/this.prjMapData.square_size_x)/20.0,4*Math.cos(Math.PI*y*0.5/this.prjMapData.square_size_y)/12.0, 0 );
 
+			//colorAttr.setXYZ( vindex,  this.color.r, this.color.g, this.color.b  );
+			//right_friendAttr0.setXYZ( vindex, this.rfcolor.r,kx, ky );
+			//right_friendAttr1.setXYZ( vindex, Math.sin(vdest.x*Math.PI/this.prjMapData.square_size_x)*0.4,Math.cos(Math.PI*vdest.y*0.5/this.prjMapData.square_size_y), 0 );
+
 
 		});
 		positionAttribute.needsUpdate = true;
-//sizesAttr.needsUpdate = true;
+		
+		sizesAttr.needsUpdate = true;
 		colorAttr.needsUpdate = true;
 		right_friendAttr0.needsUpdate = true;
 		right_friendAttr1.needsUpdate = true;
-		right_friendAttr2.needsUpdate = true; 
-		right_friendAttr3.needsUpdate = true; 
-		right_friendAttr4.needsUpdate = true; 
+		//right_friendAttr2.needsUpdate = true; 
+		//right_friendAttr3.needsUpdate = true; 
+		//right_friendAttr4.needsUpdate = true; 
 
 	}
 
@@ -511,22 +520,15 @@ class LbMap {
 	delaunatorMap(){
 			// Delauny triangulation
 			// triangulate x, z
-			
+			if (!this.initialized) return;
+
 			const pointsMapArray = this.particlesMap.geometry.getAttribute('position').array;
-
-			const colorAttr = this.particlesMap.geometry.getAttribute( 'color' );	
-
-			const right_friendAttr0 = this.particlesMap.geometry.getAttribute( 'right_friend0' );
-			const right_friendAttr1 = this.particlesMap.geometry.getAttribute( 'right_friend1' );
-			const right_friendAttr2 = this.particlesMap.geometry.getAttribute( 'right_friend2' );
-			const right_friendAttr3 = this.particlesMap.geometry.getAttribute( 'right_friend3' );
-			const right_friendAttr4 = this.particlesMap.geometry.getAttribute( 'right_friend4' );	
 
 			//const pointsMap = this.pointsMap;	
 			if (pointsMapArray.length < 3) return;
 
 			const pointsMap = [];			
-			for (let i = 0; i < pointsMapArray.length; i += 3) {
+			for (let i = 0; i < this.maxvindex*3; i += 3) {
 				const x = pointsMapArray[i];
 				const y = pointsMapArray[i + 1];
 				const z = pointsMapArray[i + 2];
@@ -537,12 +539,20 @@ class LbMap {
 				pointsMap.map((v, i) => {
 				return [v.x, v.y];
 				})
-			);
+			);			
 
 			if (!this.delaunyInitialized) {
 				const geometryMap = new THREE.BufferGeometry().setFromPoints( pointsMap );
-				geometryMap.setAttribute( 'color', colorAttr );
 
+				const colorAttr = this.particlesMap.geometry.getAttribute( 'color' );	
+
+				const right_friendAttr0 = this.particlesMap.geometry.getAttribute( 'right_friend0' );
+				const right_friendAttr1 = this.particlesMap.geometry.getAttribute( 'right_friend1' );
+				const right_friendAttr2 = this.particlesMap.geometry.getAttribute( 'right_friend2' );
+				const right_friendAttr3 = this.particlesMap.geometry.getAttribute( 'right_friend3' );
+				const right_friendAttr4 = this.particlesMap.geometry.getAttribute( 'right_friend4' );	
+
+				geometryMap.setAttribute( 'color', colorAttr );
 				geometryMap.setAttribute( 'right_friend0', right_friendAttr0 );
 				geometryMap.setAttribute( 'right_friend1', right_friendAttr1 );
 				geometryMap.setAttribute( 'right_friend2', right_friendAttr2 );
@@ -559,7 +569,7 @@ class LbMap {
 
 				geometryMap.setIndex(meshIndex); // add three.js index to the existing geometry
 				geometryMap.computeVertexNormals();
-	
+					
 				this.scene.remove(this.delaunyMap);
 
 				this.delaunyMap = new THREE.Mesh(
@@ -572,6 +582,7 @@ class LbMap {
 					this.scene.add(this.delaunyMap);
 
 				this.delaunyMap.position.z = 260;
+				console.log("delaunyMap Reinitialized " + this.delaunyMap.geometry.index.count);
 
 				this.delaunyInitialized = true;
 			}else{
@@ -582,24 +593,42 @@ class LbMap {
 //				console.log("indexes " + indexes);
 //				console.log("indexes " + indexes[0]+indexes[1]+indexes[2]);
 
+
 				const positions = this.delaunyMap.geometry.getAttribute('position');
+				const colorAttr = this.delaunyMap.geometry.getAttribute( 'color' );
+				const right_friendAttr0 = this.delaunyMap.geometry.getAttribute( 'right_friend0' );
+				const right_friendAttr1 = this.delaunyMap.geometry.getAttribute( 'right_friend1' );
+				const right_friendAttr2 = this.delaunyMap.geometry.getAttribute( 'right_friend2' );
+				const right_friendAttr3 = this.delaunyMap.geometry.getAttribute( 'right_friend3' );
+				const right_friendAttr4 = this.delaunyMap.geometry.getAttribute( 'right_friend4' );
+
 				const geometryMap = this.delaunyMap.geometry;
 
 //				const indexes = new Uint32Array(indexDelaunay.triangles); // Create a new Uint32Array for indexes
+				console.log("indexDelaunay.triangles " + pointsMapArray.length/3 + " " + indexDelaunay.triangles.length);
 
-				for (let i = 0; i < pointsMapArray.length; i += 3) {
-					positions.setXYZ(i / 3, pointsMapArray[i], pointsMapArray[i + 1], pointsMapArray[i + 2]);
+				for (let i = 0; i < this.maxvindex*3; i += 3) {
+					let vindex = i / 3;
+//					this.color.setHSL( vindex / this.maxvindex, 0.3, 0.5 );
+
+					positions.setXYZ(vindex, pointsMapArray[i], pointsMapArray[i + 1], pointsMapArray[i + 2]);
+//					colorAttr.setXYZ( vindex,  this.color.r, this.color.g, this.color.b  );
+//					right_friendAttr0.setXYZ( vindex, 0, 0, 0 );
+//					right_friendAttr1.setXYZ( vindex, 0, 0, 0 );
+//					right_friendAttr2.setXYZ( vindex, 0, 0, 0 );
+//					right_friendAttr3.setXYZ( vindex, 0, 0, 0 );
+//					right_friendAttr4.setXYZ( vindex, 0, 0, 0 );
 				}
 
 //				this.delaunyMap.geometry.setIndex(new THREE.BufferAttribute(indexes, 1)); // Set the indexes using the new Uint32Array
 
-// Get the index attribute
-const indices = this.delaunyMap.geometry.getIndex();
+				// Get the index attribute
+				const indices = this.delaunyMap.geometry.getIndex();
 
-// Update the indices
-for (let i = 0; i < indexDelaunay.triangles.length; i++) {
-    indices.setX(i, indexDelaunay.triangles[i]);
-}
+				// Update the indices
+				for (let i = 0; i < indexDelaunay.triangles.length; i++) {
+					indices.setX(i, indexDelaunay.triangles[i]);
+				}
 
 
 
@@ -616,11 +645,15 @@ for (let i = 0; i < indexDelaunay.triangles.length; i++) {
 				geometryMap.setAttribute( 'right_friend4', right_friendAttr4 );			
 */				
 
-				//this.delaunyMap.geometry.setDrawRange( 0, this.maxvindex )				
+				this.delaunyMap.geometry.setDrawRange( 0, indexDelaunay.triangles.length )				
 				indices.needsUpdate = true;
 				positions.needsUpdate = true;
-				
-				
+//				right_friendAttr0.needsUpdate = true;
+//				right_friendAttr1.needsUpdate = true;
+//				right_friendAttr2.needsUpdate = true;
+//				right_friendAttr3.needsUpdate = true;
+//				right_friendAttr4.needsUpdate = true;
+//				colorAttr.needsUpdate = true;				
 			}
 
 	}
@@ -786,7 +819,7 @@ for (let i = 0; i < indexDelaunay.triangles.length; i++) {
 					const vdest = this.toScreenPosition(point, kx, ky);
 
 					this.rfcolor = this.color;
-					this.color.setHSL( vindex / this.maxvindex, 1.0, 1.0 );
+					this.color.setHSL( vindex / this.maxvindex, 1.0, 0.5 );
 					//this.color.setHSL( 0.4, 1.0, 0.5 );
 				
 					if (!regen){											
@@ -795,15 +828,16 @@ for (let i = 0; i < indexDelaunay.triangles.length; i++) {
 						//if (kx%this.prjMapData.x == 2 && ky%this.prjMapData.y == 2){
 						if ((kx > 0 && kx<this.prjMapData.y - 1) && (ky > 0 && ky<this.prjMapData.x - 1)){
 							colorAttr.setXYZ( vindex,  this.color.r, this.color.g, this.color.b  );
+							//colorAttr.setXYZ( vindex,  0.9, 0.1, 0.1  );
 							right_friendAttr0.setXYZ( vindex, this.rfcolor.r,kx, ky );
-							right_friendAttr1.setXYZ( vindex, 10*Math.sin(vdest.x*Math.PI/this.prjMapData.square_size_x),10*Math.cos(Math.PI*vdest.y*0.5/this.prjMapData.square_size_y), 0 );
+							right_friendAttr1.setXYZ( vindex, Math.sin(vdest.x*Math.PI/this.prjMapData.square_size_x)*0.4,Math.cos(Math.PI*vdest.y*0.5/this.prjMapData.square_size_y), 0 );
 						//	right_friendAttr2.setXYZ( vindex, this.rfcolor.r,kx, ky );
 						//	right_friendAttr3.setXYZ( vindex, this.rfcolor.r,kx, ky );
 						//	right_friendAttr4.setXYZ( vindex, this.rfcolor.r,kx, ky );
 						}else{
-							colorAttr.setXYZ( vindex,  0.9, 0.8, 0.8  );
-							right_friendAttr0.setXYZ(vindex,0,0,0);
-							right_friendAttr1.setXYZ(vindex,0,0,0);
+							colorAttr.setXYZ( vindex,  0.1, 0.1, 0.9  );
+							right_friendAttr0.setXYZ( vindex, this.rfcolor.r,kx, ky );
+							right_friendAttr1.setXYZ( vindex, Math.sin(vdest.x*Math.PI/this.prjMapData.square_size_x)*0.4,Math.cos(Math.PI*vdest.y*0.5/this.prjMapData.square_size_y), 0 );
 							//right_friendAttr2.setXYZ(vindex,0,0,0);
 							//right_friendAttr3.setXYZ(vindex,0,0,0);
 							//right_friendAttr4.setXYZ(vindex,0,0,0);
@@ -821,20 +855,26 @@ for (let i = 0; i < indexDelaunay.triangles.length; i++) {
 
 					}else{
 						this.right_friend0.push( this.rfcolor.r,kx, ky );
-						this.right_friend1.push( this.rfcolor.r,kx, ky );
+						this.right_friend1.push( Math.sin(vdest.x*Math.PI/this.prjMapData.square_size_x)*0.4,Math.cos(Math.PI*vdest.y*0.5/this.prjMapData.square_size_y), 0 );
 						this.right_friend2.push( this.rfcolor.r,kx, ky );
 						this.right_friend3.push( this.rfcolor.r,kx, ky );
 						this.right_friend4.push( this.rfcolor.r,kx, ky );
 
-						this.colors.push( 0.9, 0.7, 0.2 );		
+						this.colors.push( 0.9, 0.1, 0.1 );		
+
+						let x = (vindex+n)%(2*100);
+						if (x>100) x = (5 - x%100);						
+
+/*
+// small particles
 						let x = (vindex+n)%(2*10);
 						if (x>10) x = (11 - x%10);
-						//this.sizes.push( x/4.0 + 2 );
+*/						
 						this.sizes.push( x + 1);
-						//this.sizes.push( 100);
+
 						this.pointsMap.push (vdest);		
-						//console.log(this.activeMapCoords[vindex]);
 					} 
+
 					this.activeMapCoords.push ({_index:vindex,kx:kx,ky:ky,j:j});
 					vindex++;
 				}
@@ -862,7 +902,9 @@ for (let i = 0; i < indexDelaunay.triangles.length; i++) {
 		}else{		
 			this.particlesMap.geometry.setDrawRange( 0, vindex )
 			this.maxvindex = vindex;
-		
+			// update
+			console.log("vindex update" + vindex + "out of " + this.geometryMap.attributes.position.count);
+
 			positionAttribute.needsUpdate = true;
 			colorAttr.needsUpdate = true;
 			sizesAttr.needsUpdate = true;
