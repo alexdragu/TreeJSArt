@@ -14,7 +14,7 @@
 	<body>
 		<canvas class="webgl"></canvas>
 
-		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a>  BL Map v0.72<br/>
+		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a>  BL Map v0.73<br/>
 		<b>O</b> orthographic <b>P</b> perspective <b>H</b> hide title <b>
 		</div>
 
@@ -57,7 +57,8 @@
 				//vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
 				//vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
 				vec4 mvFriends = ( vec4(vRightFriend2,0.0) + vec4(vRightFriend3,0.0) + vec4(vRightFriend4,0.0))/3.0;
-				mvFriends = vec4( position, 1.0 ) + mvFriends/3.0;
+				//mvFriends = vec4( position, 1.0 ) + mvFriends/3.0;
+				mvFriends = vec4( position, 1.0 );// + mvFriends/3.0;
 				mvFriends.z = position.z;	
 				vec4 mvPosition = modelViewMatrix * (mvFriends);
 				
@@ -68,7 +69,8 @@
 				gl_PointSize = 1.0 * size *(1.0 + 2.0 * vRightFriend1.x* vRightFriend1.y/2.0);//* ( 300.0 / -mvPosition.z );
 
 				//gl_Position = projectionMatrix * mvPosition;
-				gl_Position = projectionMatrix * (mvPosition + 1.8*vec4(vRightFriend1,0.0));				
+				//gl_Position = projectionMatrix * (mvPosition + 1.8*vec4(vRightFriend1,0.0));
+				gl_Position = projectionMatrix * (mvPosition);				
 
 			}
 
@@ -137,7 +139,8 @@
 				//vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
 				//vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
 				vec4 mvFriends = ( vec4(vRightFriend2,0.0) + vec4(vRightFriend3,0.0) + vec4(vRightFriend4,0.0))/3.0;
-				mvFriends = vec4( position, 1.0 ) + mvFriends/3.0;
+				//mvFriends = vec4( position, 1.0 ) + mvFriends/3.0;
+				mvFriends = vec4( position, 1.0 );// + mvFriends/3.0;
 				mvFriends.z = position.z;	
 				vec4 mvPosition = modelViewMatrix * (mvFriends);
 				
@@ -146,8 +149,8 @@
 				//gl_PointSize = 1.0 * size *(1.0 + 1.0 * vRightFriend1.x* vRightFriend1.y/50.0);//* ( 300.0 / -mvPosition.z );
 				gl_PointSize = 1.0 * size *(2.0 + 1.0 * vRightFriend1.x* vRightFriend1.y/18.0);//* ( 300.0 / -mvPosition.z );
 
-				//gl_Position = projectionMatrix * mvPosition;
-				gl_Position = projectionMatrix * (mvPosition + 1.8*vec4(vRightFriend1,0.0));				
+				gl_Position = projectionMatrix * mvPosition;
+				//gl_Position = projectionMatrix * (mvPosition + 1.8*vec4(vRightFriend1,0.0));				
 				vPos = gl_Position;
 
 				vCoords = vPos.xy;
@@ -638,6 +641,7 @@ function getObjectString(entry) {
 						const objId = Math.floor(Math.random() * objCount);
 						console.log("Random Object " + objId + " of : " + objCount);
 						pullRemoteObject (objId);
+						
 						break;							
 					case 65: /*A*/
 
@@ -648,11 +652,15 @@ function getObjectString(entry) {
 						break;
 					case 90: /*Z*/
 						lbMap.updateMapCoords();	
+
 						lbMap.ReGenerateMap(false);
 					break;
 					case 88: /*X*/
-						// Add your code here for key Xw
-						lbMap.ReGenerateMap(true);
+						// Add your code here for key Xw						
+						lbMap.friend_mode++;
+						lbMap.friend_mode%=4;
+						console.log("Friends mode: " + lbMap.friend_mode);
+						//lbMap.ReGenerateMap(true);
 						break;
 					case 67: /*C*/
 						lbMap.delaunyInitialized = false;
@@ -775,6 +783,7 @@ if (go_auto){
 
 				lbMap.factory();
 //				console.log("Randomized " + lbMap.defIndexfi + " " + lbMap.defIndextheta + " " + lbMap.fact);
+//				lbMap.rebuildMapData();
 				lbMap.ReGenerateMap(false);
 }
 
@@ -848,7 +857,6 @@ if (go_auto){
 							lbMap.Vstep = lbMap.theta_cover/lbMap.winxcnt;
 							lbMap.Hstep = lbMap.phi_cover/lbMap.winycnt;
 
-
 							effectController.winSizeH = lbMap.window_h;
 							effectController.winSizeW = lbMap.window_w;
 
@@ -874,7 +882,7 @@ if (go_auto){
 					//console.log(lbMap.prjMapData);
 
 				}
-
+				//lbMap.moveParticleSystemOnSphereSpace(timeBetweenRenders/5600, 6);
 				lbMap.moveParticleSystem(timeBetweenRenders/60,4);
 				lbMap.delaunatorMap();
 
