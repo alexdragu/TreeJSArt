@@ -66,11 +66,11 @@
 				//gl_PointSize = 1.0 * size * ( 300.0 / -mvPosition.z );
 				// increase the size of the points
 				//gl_PointSize = 1.0 * size *(1.0 + 1.0 * vRightFriend1.x* vRightFriend1.y/50.0);//* ( 300.0 / -mvPosition.z );
-				gl_PointSize = 1.0 * size *(1.0 + 2.0 * vRightFriend1.x* vRightFriend1.y/2.0);//* ( 300.0 / -mvPosition.z );
+				gl_PointSize = 2.0 * size *(2.0 + 1.0 * vRightFriend1.x* vRightFriend1.y/20.0);//* ( 300.0 / -mvPosition.z );
 
 				//gl_Position = projectionMatrix * mvPosition;
-				//gl_Position = projectionMatrix * (mvPosition + 1.8*vec4(vRightFriend1,0.0));
-				gl_Position = projectionMatrix * (mvPosition);				
+				gl_Position = projectionMatrix * (mvPosition + 1.8*vec4(vRightFriend1,0.0));
+				//gl_Position = projectionMatrix * (mvPosition);				
 
 			}
 
@@ -412,7 +412,11 @@ function getObjectString(entry) {
 				// 153 antarctica
 				// 9 argentina
 				// 132 australia
-				pullRemoteObject (133);
+				//pullRemoteObject (133);
+
+				lbMap.loadRandomMap();
+				lbMap.rebuildMapData();						
+				lbMap.ReGenerateMap(true);
 
 				canvas = document.querySelector('.webgl');
 				renderer = new THREE.WebGLRenderer( {canvas, preserveDrawingBuffer: true , antialias: true } );
@@ -657,8 +661,9 @@ function getObjectString(entry) {
 					break;
 					case 88: /*X*/
 						// Add your code here for key Xw						
-						lbMap.friend_mode++;
-						lbMap.friend_mode%=4;
+						//lbMap.friend_mode++;
+						//lbMap.friend_mode%=4;
+						lbMap.setFriends(this.friend_mode);	
 						console.log("Friends mode: " + lbMap.friend_mode);
 						//lbMap.ReGenerateMap(true);
 						break;
