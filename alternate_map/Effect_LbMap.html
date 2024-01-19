@@ -663,7 +663,13 @@ function getObjectString(entry) {
 						// Add your code here for key Xw						
 						//lbMap.friend_mode++;
 						//lbMap.friend_mode%=4;
-						lbMap.setFriends(this.friend_mode);	
+						if (lbMap.friend_mode==2) {
+							lbMap.friend_mode = 4;
+						}else{
+							lbMap.friend_mode = 2;
+						}
+
+						lbMap.setFriends(6);	
 						console.log("Friends mode: " + lbMap.friend_mode);
 						//lbMap.ReGenerateMap(true);
 						break;
@@ -888,8 +894,8 @@ if (go_auto){
 
 				}
 				//lbMap.moveParticleSystemOnSphereSpace(timeBetweenRenders/5600, 6);
-				lbMap.moveParticleSystem(timeBetweenRenders/60,4);
-				lbMap.delaunatorMap();
+				lbMap.moveParticleSystem(timeBetweenRenders/60,6);
+				//lbMap.delaunatorMap();
 
 
 				if (show_camhelper != effectController.show_camhelper){

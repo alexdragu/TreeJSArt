@@ -27,7 +27,7 @@ class MapCoord {
 		this.spotz = z;
 
 		this.friends = [];
-
+		this.is_friend = false;
 		// need an autoincrement here
 		this.id = ProjectionMapData.indexCounter++;
 
@@ -355,61 +355,113 @@ class LbMap {
 		}
 	}
 
-	setFriends(fcount) {
 
-		let MapCoordsOrdered = this.mapCoords.slice(); // Cloning the mapCoords array
+	setFriends(fcount,i) {
+		var ffound = 0;
+		var fmin = 10000;
+
+		//console.log(" j: " + this.activeMapCoords[i].j + " i: " + i );
+		var a = this.mapCoords[this.activeMapCoords[i].j];
+		
+		//var a = this.mapCoords[i];		
+		a.friends = [];
+
+		for ( var k = i + 1; k < this.activeMapCoords.length; k++ ) {					
+//		for ( var j = i + 1; j < this.mapCoords.length; j++ ) {
+			var j = this.activeMapCoords[k].j;
+			var b = this.mapCoords[j];
+			const aDistance = Math.sqrt((a.x-b.x)* (a.x-b.x) 
+			+ (a.y-b.y)* (a.y-b.y));
+
+			if (aDistance<fmin){
+				fmin = aDistance;
+
+				a.friends.unshift(j);								
+				a.type = j;
+
+				if (ffound < fcount) {
+					ffound++;
+				} else {
+					//console.log(a.friends);
+					a.friends.pop();
+				}
+			}									
+		}
+
+//		if (i+1<this.mapCoords.length)
+//			this.setFriends(fcount,i+1);
+
+		if (i+1<this.activeMapCoords.length)
+			this.setFriends(fcount,i+1);			
+
+/*
+		//console.log(a.friends);
+		// frinds of friends
+		a.friends.forEach((friend, index) => {
+			this.setFriends(fcount,friend);
+		});
+*/
+	}
+
+
+
+	setFriends2(fcount) {
+
+		let MapCoordsOrdered = [...this.mapCoords];
+		//let MapCoordsOrdered = this.mapCoords.clone(); // Cloning the mapCoords array
 		
 		// order by sqrt(fi^2 + theta^2)
 		// fi and theta should be recomputed for this to work
-	let mode = this.friend_mode; 
+		let mode = this.friend_mode; 
 
-	if (mode==0){
-		MapCoordsOrdered.sort(function(a, b) {
-			const aDistance = Math.sqrt(a.fi * a.fi + a.theta * a.theta);
-			const bDistance = Math.sqrt(b.fi * b.fi + b.theta * b.theta);
-			return aDistance - bDistance;
-		});
-	}
+		if (mode==0){
+			MapCoordsOrdered.sort(function(a, b) {
+				const aDistance = Math.sqrt(a.fi * a.fi + a.theta * a.theta);
+				const bDistance = Math.sqrt(b.fi * b.fi + b.theta * b.theta);
+				return aDistance - bDistance;
+			});
+		}
 
-// best
-	if (mode==1){
-		MapCoordsOrdered.sort(function(a, b) {
-			const aDistance = Math.sqrt(
-				(a.fi - b.fi) * (a.fi - b.fi) 
-				+ (a.theta - b.theta) * (a.theta - b.theta)
-				);
-			return aDistance ;
-		});
-	}
+		// best
+		if (mode==1){
+			MapCoordsOrdered.sort(function(a, b) {
+				const aDistance = Math.sqrt(
+					(a.fi - b.fi) * (a.fi - b.fi) 
+					+ (a.theta - b.theta) * (a.theta - b.theta)
+					);
+				return aDistance ;
+			});
+		}
 
-	if (mode==2){
-		MapCoordsOrdered.sort(function(a, b) {
-			const aDistance = Math.sqrt((a.x-b.x)* (a.x-b.x) 
-								+ (a.y-b.y)* (a.y-b.y));
-			return aDistance ;
-		});
-	}
+		if (mode==2){
+			MapCoordsOrdered.sort(function(a, b) {
+				const aDistance = Math.sqrt((a.x-b.x)* (a.x-b.x) 
+									+ (a.y-b.y)* (a.y-b.y));
+				return aDistance ;
+			});
+		}
 
-	if (mode==3){
-		MapCoordsOrdered.sort(function(a, b) {
-			const aDistance = Math.sqrt(a.x * a.x + a.y * a.y);
-			const bDistance = Math.sqrt(b.x * b.x + b.y * b.y);
-			return aDistance - bDistance;
-		});
-	}
+		if (mode==3){
+			MapCoordsOrdered.sort(function(a, b) {
+				const aDistance = Math.sqrt(a.x * a.x + a.y * a.y);
+				const bDistance = Math.sqrt(b.x * b.x + b.y * b.y);
+				return aDistance - bDistance;
+			});
+		}
 
-	if (mode==4){
-		this.shuffleArray(MapCoordsOrdered);
-	}
+		if (mode==4){
+			this.shuffleArray(MapCoordsOrdered);
+		}
 
-		MapCoordsOrdered.forEach((coord, index) => {
+		MapCoordsOrdered.sort().forEach((coord, index) => {
 			const numPredecessors = Math.min(index, fcount);
 			coord.friends = [];
-			if (index%fcount==0){
+			if (index%(fcount+1)==0){
 				// set friends for subject
 				for (let i = 0; i < numPredecessors; i++) {
 					coord.friends[i] = index - (i + 1);
 					coord.type = 1;
+					//console.log (" index: " + index + " coord.friends[i]: " + coord.friends[i]);
 				}
 				//console.log(coord.friends);
 				// set friends for friends
@@ -417,8 +469,13 @@ class LbMap {
 				for (let i = 0; i < numPredecessors; i++) {
 					for (let j = 0; j < numPredecessors; j++) {
 					//coord.friends[i] = index - (i + 1);
-						MapCoordsOrdered[coord.friends[i]].friends[j] = coord.friends[j];
-						//MapCoordsOrdered[coord.friends[i]].type = 2;
+						if (coord.friends[i] != index){
+							MapCoordsOrdered[coord.friends[i]].friends[j] = coord.friends[j];						
+							MapCoordsOrdered[coord.friends[i]].type = index;
+						//	console.log (" Erase index: " + index + " coord.friends[i]: " + coord.friends[i] + " coord.friends[j]: " + coord.friends[j]);							
+						}else{
+
+						}
 					}
 				}
 
@@ -440,7 +497,7 @@ class LbMap {
 		let speed,speedx,speedy,speedz;
 		let norm = 100.0;
 		//if (!this.friendsSet){
-			this.setFriends(fcount);
+			this.setFriends(fcount,0);
 			this.friendsSet = true;
 		//}
 
@@ -536,7 +593,7 @@ class LbMap {
 			return;
 
 		if (!this.friendsSet){
-			this.setFriends(fcount);
+			this.setFriends(fcount,0);
 			//this.friendsSet = true;
 		}
 
@@ -562,8 +619,8 @@ class LbMap {
 				let sumX = 0;
 				let sumY = 0;
 				for (let i = 0; i < fcount; i++) {
-					sumX += this.mapCoords[this.mapCoords[j].friends[i]].spotx;
-					sumY += this.mapCoords[this.mapCoords[j].friends[i]].spoty;
+					sumX += this.mapCoords[this.mapCoords[j].friends[i]].x;
+					sumY += this.mapCoords[this.mapCoords[j].friends[i]].y;
 				}
 				dirx = sumX / fcount;
 				diry = sumY / fcount;
@@ -624,8 +681,8 @@ class LbMap {
 //			dirsy = 0;
 
 //amp = 0;
-//dirx = dirx*2.0;
-//diry = diry*2.0;
+dirx = dirx*1.004;
+diry = diry*1.01;
 
 			//console.log("amp: " + amp + " amp1: " + amp1 + " dirx: " + dirx + " diry: " + diry + " dirsx: " + dirsx + " dirsy: " + dirsy);
 			
@@ -662,8 +719,11 @@ class LbMap {
 			if (this.mapCoords[j].type == 1)
 				//this.color.setHSL(0.4, 1.0, 1.0 );
 				colorAttr.setXYZ( _index,  1.0, 0.1, 0.1  );
-			else
-				colorAttr.setXYZ( _index,  0.1, 0.1, 1.0  );
+			else{
+				this.color.setHSL(this.mapCoords[j].type/this.mapCoords.length, 1.0, 0.5 );
+				colorAttr.setXYZ( _index,  this.color.r, this.color.g, this.color.b  );
+				//colorAttr.setXYZ( _index,  0.1, 0.1, 1.0  );
+			}
 			//this.color.setHSL(j / this.maxvindex, 0.1, 0.1 );
 
 			// fragment part			
