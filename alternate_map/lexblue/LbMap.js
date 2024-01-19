@@ -577,8 +577,9 @@ class LbMap {
 		}
 
 	}
-
+	totalelapsed = 0;
 	moveParticleSystem(timeBetweenCalls, fcount){
+		this.totalelapsed += timeBetweenCalls;
 		let positionAttribute;
 		let right_friendAttr0;
 		let right_friendAttr1;
@@ -680,9 +681,9 @@ class LbMap {
 //			dirsx = 0;
 //			dirsy = 0;
 
-//amp = 0;
-dirx = dirx*1.004;
-diry = diry*1.01;
+amp = 0;
+dirx = dirx*0.001;
+diry = diry*0.001;
 
 			//console.log("amp: " + amp + " amp1: " + amp1 + " dirx: " + dirx + " diry: " + diry + " dirsx: " + dirsx + " dirsy: " + dirsy);
 			
@@ -692,20 +693,22 @@ diry = diry*1.01;
 			let new_speed = Math.sqrt( (dirx+dirsx)*(dirx+dirsx) + (diry+dirsy)*(diry+dirsy) ); 
 			//speed = 10*this.mapCoords[j].speed*timeBetweenCalls/new_speed;
 			speed = this.mapCoords[j].speed;
-			speed += 0.1*Math.sign(new_speed - speed)*timeBetweenCalls/new_speed;
+			speed += 1.5*Math.sign(new_speed - speed)*timeBetweenCalls/new_speed;
 
 			//console.log("normd: " + normd + "dx " + dirx + "dy " + diry + "dsx " + dirsx + "dsy " + dirsy);
 //			if (normd==0.0) normd = 1.0;
 
-			this.mapCoords[j].directionx = -(dirx+dirsx) / new_speed;
-			this.mapCoords[j].directiony = -(diry+dirsy) / new_speed;
-
 			speedx = this.mapCoords[j].directionx * speed;
 			speedy = this.mapCoords[j].directiony * speed;						
 
+			this.mapCoords[j].directionx = (-dirx+dirsx) / new_speed;
+			this.mapCoords[j].directiony = (-diry+dirsy) / new_speed;
+
 			//console.log("Aspeedx: " + speedx + " speedy: " + speedy + " " +  speed + " dx" + this.mapCoords[j].directionx + " dy" + this.mapCoords[j].directiony	);
-			x = x + speedx * timeBetweenCalls;
-			y = y + speedy * timeBetweenCalls;
+			x = x + speedx * timeBetweenCalls**Math.sin(x/j%20.0 +(this.totalelapsed/10.0));
+			y = y + speedy * timeBetweenCalls*2*Math.sin(y/j%100.0 +(this.totalelapsed/7.0));
+
+			//console.log(timeBetweenCalls + "speedx: " + speedx + " speedy: " + speedy + " " +  speed + " dx" + this.mapCoords[j].directionx + " dy" + this.mapCoords[j].directiony	);
 			z = positionAttribute.getZ(_index);
 
 			//console.log("x: " + x + " y: " + y + " " + this.mapCoords[j].fi + " " + this.mapCoords[j].theta);
