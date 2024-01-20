@@ -630,29 +630,11 @@ class LbMap {
 				diry = 0;
 			}
 
-			// spot
-/*			
-			if (this.mapCoords[j].friends.length >= fcount){				
-				let sumX = 0;
-				let sumY = 0;
-				for (let i = 0; i < fcount; i++) {
-					sumX += this.mapCoords[j].spotx;
-					sumY += this.mapCoords[j].spoty;
-				}
-				dirsx = sumX / fcount;
-				dirsy = sumY / fcount;
-			}else{
-				dirsx = 0;
-				dirsy = 0;
-			}
-*/
 			dirsx = this.mapCoords[j].spotx;
 			dirsy = this.mapCoords[j].spoty;
 
 			x = positionAttribute.getX(_index);
 			y = positionAttribute.getY(_index);
-
-//			console.log("spotx: " + dirsx + " spoty: " + dirsy + " x: " + this.mapCoords[j].x + " y: " + this.mapCoords[j].y);
 
 			let amp = Math.sqrt((x-dirx)*(x-dirx) + (y-diry)*(y-diry))
 			//amp = 1;
@@ -705,8 +687,8 @@ diry = diry*0.001;
 			this.mapCoords[j].directiony = (-diry+dirsy) / new_speed;
 
 			//console.log("Aspeedx: " + speedx + " speedy: " + speedy + " " +  speed + " dx" + this.mapCoords[j].directionx + " dy" + this.mapCoords[j].directiony	);
-			x = x + speedx * timeBetweenCalls**Math.sin(x/j%20.0 +(this.totalelapsed/10.0));
-			y = y + speedy * timeBetweenCalls*2*Math.sin(y/j%100.0 +(this.totalelapsed/7.0));
+			x = x + speedx * timeBetweenCalls*2*Math.sin(x/j%40.0 +(this.totalelapsed/10.0));
+			y = y + speedy * timeBetweenCalls*2*Math.sin(y/j%60.0 +(this.totalelapsed/7.0));
 
 			//console.log(timeBetweenCalls + "speedx: " + speedx + " speedy: " + speedy + " " +  speed + " dx" + this.mapCoords[j].directionx + " dy" + this.mapCoords[j].directiony	);
 			z = positionAttribute.getZ(_index);
