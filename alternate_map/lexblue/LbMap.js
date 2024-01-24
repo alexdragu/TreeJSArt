@@ -14,17 +14,29 @@ import * as THREE from 'three';
 //let R,Vstep, Hstep, window_w, window_h, winxcnt ,winycnt ,fact ,mag;
 
 class MapCoord {
-	constructor(fi, theta, x, y, z){
+	constructor(fi, theta, R){
 		this.fi = fi;
 		this.theta = theta;
-
+/*
 		this.x = x;
 		this.y = y;
 		this.z = z;
+*/
 
-		this.spotx = x;
-		this.spoty = y;
-		this.spotz = z;
+
+		this.x = R * Math.cos(theta) * Math.cos(fi);
+		this.y = R * Math.cos(theta) * Math.sin(fi);
+		this.z = R * Math.sin(theta);
+		//console.log("MapCoord " + this.x + " " + this.y + " " + this.z + " R" + R);
+
+		this.spotx = this.x;
+		this.spoty = this.y;
+		this.spotz = this.z;
+
+		// this is in screen space. We have a z just in case we move 3d
+		this.sx = this.x;
+		this.sy = this.y;
+		this.sz = this.y;
 
 		this.friends = [];
 		this.is_friend = false;
@@ -36,6 +48,10 @@ class MapCoord {
 		this.directionx = 0.0;
 		this.directiony = 0.0;
 		this.directionz = 0.0;
+
+		this.favgx = 0.0;
+		this.favgy = 0.0;
+
 		this.type = 0;
 
 	}				
@@ -73,9 +89,17 @@ class LbMap {
 	square_surface_group;
 	square_flat_group;
 	radius_group;
+
+	friends_group; // not used
+
+
 	square_list = [];
 	square_flat_list = [];	
 	square_surface_list = [];
+	map_lines_list = [];
+	friends_line_list = [];
+
+
 	mapCoords = [];
 	activeMapCoords = [];
 	
@@ -121,7 +145,11 @@ class LbMap {
 	render_delaunay_wireframe = true;			
 
 	friend_mode = 2;
+	arrayOfMaps = [];
 
+	show_friend_idx = 0;
+
+	friends_group = new THREE.Group();
 
 	constructor(scene,object ,R, Vstep, Hstep, window_w, window_h, winxcnt ,winycnt ,fact ,mag, phi_cover, theta_cover){
 		this.scene = scene;
@@ -138,6 +166,8 @@ class LbMap {
 
 		this.phi_cover = phi_cover;
 		this.theta_cover = theta_cover;
+
+		this.scene.add(this.friends_group);
 	}
 
 	factory () {
@@ -150,22 +180,45 @@ class LbMap {
 		this.out_scr_h = h;
 		this.out_scr_w = w;
 	}
-
+	
 	parsePolygonCoords(polygonString) {
 		// Remove the "POLYGON " prefix and split the string into polygons
-		const polygons = polygonString.slice(8).split('), (');
+		//prefix may be POLYGON or MultyPolygon
+		
+		const firstParenthesisPosition = polygonString.indexOf('(');
+		console.log (firstParenthesisPosition);
+		const polygons = polygonString.slice(firstParenthesisPosition+1).split('), (');
 		// Map each polygon string to an array of MapCoords objects
 		const mapCoordsArrays = polygons.map(polygonString => {
 			// Remove the leading and trailing parentheses
-			const coordsString = polygonString.slice(2, -2);
+			const coordsString = polygonString.slice(1, -2);
 			// Split the coordinates string into an array of strings
 			const coordsArray = coordsString.split(',');
 			// Map each string to a MapCoords object
+			console.log ("SplitcoordsArray");
 			return coordsArray.map(coordString => {
-				const [x, y] = coordString.trim().split(' ').map(Number);
-				//return new MapCoord( x*(Math.PI)/180.0, y*(Math.PI)/(180.0));
-				return new MapCoord( x*(Math.PI)/180.0, y*(Math.PI)/(180.0));
-				//return new MapCoord( 0.0 * Math.PI/180 +x*(Math.PI)/180.0, y*(Math.PI)/(90.0));
+				//console.log (coordString + " " + coordString.substring(0,1) + " " + coordString.slice(1));
+				const sanitizedCoordStringF = coordString.substring(0,1) === '(' ? coordString.slice(1) : coordString;
+				//console.log (sanitizedCoordStringF);
+
+				//const trimmedCoordString = coordString.trim();
+				const trimmedCoordString = sanitizedCoordStringF.trim();
+				const lastCharacter = trimmedCoordString.slice(-1);
+				const sanitizedCoordString = lastCharacter === ')' ? trimmedCoordString.slice(0, -1) : trimmedCoordString;
+				//console.log (sanitizedCoordString);
+
+
+
+				const [x, y] = sanitizedCoordString.trim().split(' ').map(Number);
+				//console.log (x*(Math.PI)/180.0 + " ffff " + y*(Math.PI)/(180.0));
+				//const [x, y] = coordString.trim().split(' ').map(Number);
+				var mapCoord = new MapCoord( x*(Math.PI)/180.0, y*(Math.PI)/(180.0), this.R);
+
+//				mapCoord.x = this.R * Math.cos(mapCoord.theta) * Math.cos(mapCoord.fi);
+//				mapCoord.y = this.R * Math.cos(mapCoord.theta) * Math.sin(mapCoord.fi);
+//				mapCoord.z = this.R * Math.sin(mapCoord.theta);
+
+				return mapCoord;
 			});
 		});
 	  
@@ -217,14 +270,51 @@ class LbMap {
 	}
 
 	initMapData(mapdata) {		
-		const arrayOfMaps = [];
-		const newMapCoords = this.parsePolygonCoords(mapdata).flat();
-		//this.mapCoords = newMapCoords;
+		const tmparraymaps = this.parsePolygonCoords(mapdata);
+		const newMapCoords = tmparraymaps.flat();
+		
+		const deepCopyTmpArrayMaps = JSON.parse(JSON.stringify(tmparraymaps));
 
+		for (let i = 0; i < deepCopyTmpArrayMaps.length; i++) {
+			this.arrayOfMaps.push(deepCopyTmpArrayMaps[i].slice());
+			//console.log(tmparraymaps[i]);
+		}
+/*
+		for (let i = 0; i < tmparraymaps.length; i++) {
+			this.arrayOfMaps.push(tmparraymaps[i].slice());
+			//console.log(tmparraymaps[i]);
+		}
+*/		
+		//this.arrayOfMaps.push(newMapCoords);
 		this.mapCoords = this.mapCoords.concat(newMapCoords);
-	
+
 		this.rebuildMapData();
 	}
+
+
+	 generateLinePolynomial(polygon) {
+		// polygon is a list of MapCoords objects	
+
+		const geometry = new THREE.BufferGeometry();
+		
+		// this one will eat the original 
+		//geometry.setFromPoints( polygon );
+		geometry.setFromPoints( polygon );
+
+		// Return the line polynomial
+		const material = new THREE.LineBasicMaterial( { color: 0x2222ff } );										
+		const linePolynomial = new THREE.Line( geometry, material );	
+		this.map_lines_list.push(linePolynomial);
+
+		this.object.add(linePolynomial);
+
+		return linePolynomial;
+	}
+
+	generateLineMap(arrayOfMaps) {
+		this.linePolynomials = this.arrayOfMaps.map(polygon => this.generateLinePolynomial(polygon));
+	}
+
 
 	rebuildMapData(mapdata) {
 		this.object.remove(this.particles);
@@ -235,6 +325,15 @@ class LbMap {
 		this.scene.remove(this.radius_group);
 
 		this.particles = this.generateMap();
+
+
+		for (var n = 0;n<this.map_lines_list.length;n++){	
+			this.map_lines_list[n].geometry.dispose();							
+			this.object.remove(this.map_lines_list[n]);
+		}
+		
+		this.generateLineMap(this.arrayOfMaps);
+
 		this.square_group = this.generateWindows();
 		this.regeneratemap(true);
 		
@@ -278,10 +377,11 @@ class LbMap {
 			this.square_flat_group.remove(this.square_flat_list[n]);
 		}
 
-
 		this.square_list = [];
 		this.square_surface_list = [];
 		this.square_flat_list = [];
+		this.map_lines_list = [];
+
 
 
 		if (this.hide_squares){
@@ -291,7 +391,6 @@ class LbMap {
 		this.object.remove(this.square_group);
 		this.square_group = this.generateWindows();
 		this.object.add(this.square_group);	
-
 
 		//this.scene.add(this.square_surface_group);
 
@@ -361,49 +460,162 @@ class LbMap {
 		var fmin = 10000;
 
 		//console.log(" j: " + this.activeMapCoords[i].j + " i: " + i );
+		if (this.activeMapCoords.length <= i) return ;
+
+		// reset all activeCoords friends
+		if (i==0)
+		for ( var k = 0; k < this.activeMapCoords.length; k++ ) {
+			var j = this.activeMapCoords[k].j;
+			var b = this.mapCoords[j];
+			b.friends = [];
+		}
+
+		//console.log(" activeMapCoords	 " + this.activeMapCoords.length + " i: " + i );
 		var a = this.mapCoords[this.activeMapCoords[i].j];
 		
 		//var a = this.mapCoords[i];		
-		a.friends = [];
+		//a.friends = [];
+		let mapCoords = this.mapCoords;
+		let activeMapCoords = this.activeMapCoords;
 
-		for ( var k = i + 1; k < this.activeMapCoords.length; k++ ) {					
-//		for ( var j = i + 1; j < this.mapCoords.length; j++ ) {
+		function compareNumbers(x, y) {
+
+			let _a = mapCoords[activeMapCoords[x].j];
+			let _b = mapCoords[activeMapCoords[y].j];
+			let reper = mapCoords[activeMapCoords[i].j];
+
+			let _aDistance = Math.sqrt((_a.sx-reper.sx)* (_a.sx-reper.sx) + (_a.sy-reper.sy)* (_a.sy-reper.sy));
+			let _bDistance = Math.sqrt((_b.sx-reper.sx)* (_b.sx-reper.sx) + (_b.sy-reper.sy)* (_b.sy-reper.sy));
+
+		//	console.log("x :" + x + " dx: " + _aDistance + " : " + " y : " + y + " dy: " + _bDistance);						
+
+			return _aDistance - _bDistance;
+		}
+
+
+		// get the min from exisintg friends
+		if (a.friends.length > 0){
+			let _b =  this.mapCoords[this.activeMapCoords[a.friends[a.friends.length-1]].j];
+			a.friends.sort(compareNumbers);
+			fmin = Math.sqrt((a.sx-_b.sx)* (a.sx-_b.sx) + (a.sy-_b.sy)* (a.sy-_b.sy));
+		}
+
+		for ( var k = i + 1; k < this.activeMapCoords.length; k++ ) {
 			var j = this.activeMapCoords[k].j;
 			var b = this.mapCoords[j];
-			const aDistance = Math.sqrt((a.x-b.x)* (a.x-b.x) 
-			+ (a.y-b.y)* (a.y-b.y));
+			const aDistance = Math.sqrt((a.sx-b.sx)* (a.sx-b.sx) 
+			+ (a.sy-b.sy)* (a.sy-b.sy));
+
+			if (i==0)
+				console.log ("Compare i" + i + " with j " + j + " " + aDistance + " fmin " + fmin) ;
 
 			if (aDistance<fmin){
-				fmin = aDistance;
+				if (i==0)
+					console.log("PUSH" + aDistance);
+				a.friends.push(k);  // this is then index from activeMapCoords
+				//a.friends.unshift(j);								
+				a.type = i;
+				
+				if (a.friends.length < fcount) {
+					//console.log("distance" + aDistance);
+					if (a.friends.length == fcount - 1){
+						fmin = aDistance;
+						a.friends.sort(compareNumbers);	
 
-				a.friends.unshift(j);								
-				a.type = j;
+						if (i==0)
+							console.log("New fmin : " + fmin + " len" + a.friends.length + "(1)");
+					}
 
-				if (ffound < fcount) {
-					ffound++;
 				} else {
 					//console.log(a.friends);
+
+					// only update fmin if full backet
+					a.friends.sort(compareNumbers);
+					let _b =  this.mapCoords[this.activeMapCoords[a.friends[a.friends.length-1]].j];					
+
+					fmin = Math.sqrt((a.sx-_b.sx)* (a.sx-_b.sx) + (a.sy-_b.sy)* (a.sy-_b.sy));
+
+					if (i==0)
+						console.log("New fmin : " + fmin + " len" + a.friends.length + "(2)");
+
 					a.friends.pop();
+					if (i==0) console.log("POP");
+				}		
+
+				if (i==0) {
+					console.log(a.friends + " fmin : " + fmin + " len" + a.friends.length);				
 				}
 			}									
 		}
+		if (i==0) {
+			console.log(" i " + i + "Final : " + a.friends + " found: " + a.friends.length +  " act i" + this.activeMapCoords[i].j);
+			console.log(a.friends);
+			this.displayFriendsDistanceFrom(i);
+		}
+		
+		a.friends.forEach((idx) => {
+			this.safe_push_friend(i,idx,fcount); 
+		});			
 
-//		if (i+1<this.mapCoords.length)
-//			this.setFriends(fcount,i+1);
 
 		if (i+1<this.activeMapCoords.length)
 			this.setFriends(fcount,i+1);			
 
-/*
 		//console.log(a.friends);
 		// frinds of friends
-		a.friends.forEach((friend, index) => {
-			this.setFriends(fcount,friend);
-		});
-*/
 	}
 
+	safe_push_friend(i,idx,fcount){
+		let mapCoords = this.mapCoords;
+		let activeMapCoords = this.activeMapCoords;
 
+		function compareNumbers(x, y) {
+
+			let _a = mapCoords[activeMapCoords[x].j];
+			let _b = mapCoords[activeMapCoords[y].j];
+			let reper = mapCoords[activeMapCoords[idx].j];
+
+			let _aDistance = Math.sqrt((_a.sx-reper.sx)* (_a.sx-reper.sx) + (_a.sy-reper.sy)* (_a.sy-reper.sy));
+			let _bDistance = Math.sqrt((_b.sx-reper.sx)* (_b.sx-reper.sx) + (_b.sy-reper.sy)* (_b.sy-reper.sy));
+
+			//console.log("x :" + x + " dx: " + _aDistance + " : " + " y : " + y + " dy: " + _bDistance);						
+
+			return _aDistance - _bDistance;
+		}
+
+		//console.log("FPUSH in :" + idx + " " + i + " distance : " + this.distance(i,idx));
+
+		let b = this.mapCoords[this.activeMapCoords[idx].j];
+		b.type = idx;
+		b.friends.push(i);
+		b.friends.sort(compareNumbers);
+		//console.log("FPUSH RESULT:" + b.friends);
+		if (b.friends.length > fcount ) {
+			b.friends.pop();
+			//console.log("POP");	
+		}
+
+		//this.displayFriendsDistanceFrom(idx);
+	}
+
+	displayFriendsDistanceFrom(_i){
+		let i = this.activeMapCoords[_i].j;
+		console.log ("Reper from " + _i + "r_i " + i + "sx:" + this.mapCoords[i].sx + " sy:" + this.mapCoords[i].sy);
+
+		this.mapCoords[i].friends.forEach((_idx) => {
+			let idx = this.activeMapCoords[_idx].j;
+			let distance = this.distance(_i,_idx);
+			console.log ("Distance from " + _i + " r_i "+ i + " to " + _idx + " r_idx "+ idx + " is " + distance + " sx:" + this.mapCoords[idx].sx + " sy:" + this.mapCoords[idx].sy);
+		});
+	}
+
+	distance (_i,_j){
+		let i = this.activeMapCoords[_i].j;
+		let j = this.activeMapCoords[_j].j;
+		let distance = Math.sqrt((this.mapCoords[i].sx-this.mapCoords[j].sx)* (this.mapCoords[i].sx-this.mapCoords[j].sx) + 
+			(this.mapCoords[i].sy-this.mapCoords[j].sy)* (this.mapCoords[i].sy-this.mapCoords[j].sy));
+		return distance;
+	}
 
 	setFriends2(fcount) {
 
@@ -468,7 +680,7 @@ class LbMap {
 
 				for (let i = 0; i < numPredecessors; i++) {
 					for (let j = 0; j < numPredecessors; j++) {
-					//coord.friends[i] = index - (i + 1);
+						//coord.friends[i] = index - (i + 1);
 						if (coord.friends[i] != index){
 							MapCoordsOrdered[coord.friends[i]].friends[j] = coord.friends[j];						
 							MapCoordsOrdered[coord.friends[i]].type = index;
@@ -593,10 +805,12 @@ class LbMap {
 		if (!this.activeInitialized)
 			return;
 
-		if (!this.friendsSet){
-			this.setFriends(fcount,0);
-			//this.friendsSet = true;
-		}
+//		if (this.friendsSet) return;
+
+		this.setFriends(fcount,0);
+
+		this.friendsSet = true;
+		
 
 		positionAttribute = this.particlesMap.geometry.getAttribute( 'position' );
 		// need to get right_friend and size
@@ -607,122 +821,140 @@ class LbMap {
 
 		const vindex = this.particlesMap.geometry.drawRange;
 
-		let x,y,z;
+		let sx,sy,sz;
 		let dirx,diry,dirz;
 		let dirsx,dirsy,dirsz;
 
 		let speed,speedx,speedy,speedz;
 		let norm = 100.0;
-
+		//console.log("Start -------------");
 		this.activeMapCoords.forEach(({ _index, kx, ky, j }) => {
 
-			if (this.mapCoords[j].friends.length >= fcount){				
+
+			dirx = 0;
+			diry = 0;
+
+//			if (this.mapCoords[j].friends.length >= fcount){				
+			if (this.mapCoords[j].friends.length > 0){
 				let sumX = 0;
 				let sumY = 0;
-				for (let i = 0; i < fcount; i++) {
-					sumX += this.mapCoords[this.mapCoords[j].friends[i]].x;
-					sumY += this.mapCoords[this.mapCoords[j].friends[i]].y;
+				let _fcount = this.mapCoords[j].friends.length;
+				for (let i = 0; i < this.mapCoords[j].friends.length; i++) {
+					sumX += this.mapCoords[this.activeMapCoords[this.mapCoords[j].friends[i]].j].sx;
+					sumY += this.mapCoords[this.activeMapCoords[this.mapCoords[j].friends[i]].j].sy;
 				}
-				dirx = sumX / fcount;
-				diry = sumY / fcount;
+				dirx = sumX / _fcount;
+				diry = sumY / _fcount;
+				//console.log("HIT");
 			}else{
+//				console.log("NHIT + " + "flen " + this.mapCoords[j].friends.length);
 				dirx = 0;
 				diry = 0;
 			}
 
-			dirsx = this.mapCoords[j].spotx;
-			dirsy = this.mapCoords[j].spoty;
 
-			x = positionAttribute.getX(_index);
-			y = positionAttribute.getY(_index);
+			dirsx = this.mapCoords[j].spotx+50;
+			dirsy = this.mapCoords[j].spoty+50;
+			//sx = positionAttribute.getX(_index);
+			//sy = positionAttribute.getY(_index);
+			sx = this.mapCoords[j].sx;
+			sy = this.mapCoords[j].sy;
 
-			let amp = Math.sqrt((x-dirx)*(x-dirx) + (y-diry)*(y-diry))
-			//amp = 1;
+			//console.log("sx: " + sx + " sy: " + sy + " " + this.mapCoords[j].sx + " " + this.mapCoords[j].sy + " " +  " "  + this.mapCoords[j].spotx + " " + this.mapCoords[j].spoty	);
+
+//			dirx = 100;//dirx;
+//			diry = 100;//diry;
+
+			this.mapCoords[j].favgx = dirx;
+			this.mapCoords[j].favgy = diry;
+
+
+			let amp = Math.sqrt((sx-dirx)*(sx-dirx) + (sy-diry)*(sy-diry))
+//			console.log("amp: " + amp + " " + sx + " " + sy + " " + dirx + " " + diry);
+			//amp = 1;			
+
 			if ((isNaN(amp)) || (amp == 0.0)) {
 				dirx = 0.0;
 				diry = 0.0;
 				amp = 0.0;
 			}else{			
-				dirx = (x - dirx) / amp;
-				diry = (y - diry) / amp;
+				dirx = (sx - dirx) / amp;
+				diry = (sy - diry) / amp;
 			}
-
-			let amp1 = Math.sqrt((x-dirsx)*(x-dirsx) + (y-dirsy)*(y-dirsy))
-			//let amp1 = 1;
-//			dirsx = x;
-//			dirsy = y;
+			
+			let amp1 = Math.sqrt((sx-dirsx)*(sx-dirsx) + (sy-dirsy)*(sy-dirsy))
 			if ((isNaN(amp1)) || (amp1 == 0.0)) {
 				dirsx = 0.0;
 				dirsy = 0.0;
 				amp1 = 0.0;
 			}else{			
-				dirsx = (x - dirsx) / amp1;
-				dirsy = (y - dirsy) / amp1;
+				dirsx = (sx - dirsx) / amp1;
+				dirsy = (sy - dirsy) / amp1;
 			}
 //			amp1 = 0;
-//			dirsx = 0;
-//			dirsy = 0;
+			dirsx = 0;
+			dirsy = 0;
 
-amp = 0;
-dirx = dirx*0.001;
-diry = diry*0.001;
-
-			//console.log("amp: " + amp + " amp1: " + amp1 + " dirx: " + dirx + " diry: " + diry + " dirsx: " + dirsx + " dirsy: " + dirsy);
-			
-			//this.mapCoords[j].speed -= Math.sign(amp+amp1)*timeBetweenCalls/norm;
-			
-			
+//amp = 0;
+//dirx = 0.0;//dirx;
+//diry = 0.0;//diry;
+//console.log(dirx + " " + diry + " " + amp + " " + amp1 + " " + this.mapCoords[j].speed + " " + timeBetweenCalls + " " + norm + " " + this.mapCoords[j].directionx + " " + this.mapCoords[j].directiony)	;
+			this.mapCoords[j].speed = -2.1;
+			//this.mapCoords[j].speed -= Math.sign(amp+amp1)*timeBetweenCalls/norm;						
 			let new_speed = Math.sqrt( (dirx+dirsx)*(dirx+dirsx) + (diry+dirsy)*(diry+dirsy) ); 
-			//speed = 10*this.mapCoords[j].speed*timeBetweenCalls/new_speed;
-			speed = this.mapCoords[j].speed;
-			speed += 1.5*Math.sign(new_speed - speed)*timeBetweenCalls/new_speed;
+			//speed = 10*this.mapCoords[j].speed*timeBetweenCalls;///new_speed;
+			//onsole.log("speed: " + speed + " " + this.mapCoords[j].speed + " " + new_speed + " " + timeBetweenCalls);
+			speed = this.mapCoords[j].speed*timeBetweenCalls;
+			//console.log("Speed " + speed + " " + this.mapCoords[j].speed + " " + timeBetweenCalls);
+			//speed = Math.sign(new_speed - speed)*timeBetweenCalls/new_speed;
 
 			//console.log("normd: " + normd + "dx " + dirx + "dy " + diry + "dsx " + dirsx + "dsy " + dirsy);
 //			if (normd==0.0) normd = 1.0;
 
+			this.mapCoords[j].directionx = (dirx+dirsx) / new_speed;
+			this.mapCoords[j].directiony = (diry+dirsy) / new_speed;
+
 			speedx = this.mapCoords[j].directionx * speed;
 			speedy = this.mapCoords[j].directiony * speed;						
 
-			this.mapCoords[j].directionx = (-dirx+dirsx) / new_speed;
-			this.mapCoords[j].directiony = (-diry+dirsy) / new_speed;
+
 
 			//console.log("Aspeedx: " + speedx + " speedy: " + speedy + " " +  speed + " dx" + this.mapCoords[j].directionx + " dy" + this.mapCoords[j].directiony	);
-			x = x + speedx * timeBetweenCalls*2*Math.sin(x/j%40.0 +(this.totalelapsed/10.0));
-			y = y + speedy * timeBetweenCalls*2*Math.sin(y/j%60.0 +(this.totalelapsed/7.0));
+			sx = sx + speedx * timeBetweenCalls;//Math.sin((this.totalelapsed/100.0)) + sx%30*speedx*Math.cos(sx/j%20.0)/6 ;
+			sy = sy + speedy * timeBetweenCalls;//*Math.sin(sy/(2*j%10.0) +(this.totalelapsed/170.0)) + sy%30*speedx*Math.cos(sy/j%20.0)/6;
+			sz = positionAttribute.getZ(_index);
 
-			//console.log(timeBetweenCalls + "speedx: " + speedx + " speedy: " + speedy + " " +  speed + " dx" + this.mapCoords[j].directionx + " dy" + this.mapCoords[j].directiony	);
-			z = positionAttribute.getZ(_index);
-
-			//console.log("x: " + x + " y: " + y + " " + this.mapCoords[j].fi + " " + this.mapCoords[j].theta);
-			positionAttribute.setXYZ(_index, x, y, z);
+			positionAttribute.setXYZ(_index, sx, sy, sz);
 			this.mapCoords[j].speed = speed;
 
-			this.mapCoords[j].x = x;
-			this.mapCoords[j].y = y;
-			this.mapCoords[j].z = z;
+			// this si actually useles
+			this.mapCoords[j].sx = sx;
+			this.mapCoords[j].sy = sy;
+			this.mapCoords[j].sz = sz;
 
 			if (this.mapCoords[j].type == 1)
-				//this.color.setHSL(0.4, 1.0, 1.0 );
 				colorAttr.setXYZ( _index,  1.0, 0.1, 0.1  );
 			else{
-				this.color.setHSL(this.mapCoords[j].type/this.mapCoords.length, 1.0, 0.5 );
+				this.color.setHSL(this.mapCoords[j].type/this.activeMapCoords.length, 0.7 , 0.7 );
 				colorAttr.setXYZ( _index,  this.color.r, this.color.g, this.color.b  );
-				//colorAttr.setXYZ( _index,  0.1, 0.1, 1.0  );
 			}
-			//this.color.setHSL(j / this.maxvindex, 0.1, 0.1 );
+
+			//console.log(_index +" " + this.totalelapsed + " " );
 
 			// fragment part			
 			//colorAttr.setXYZ( _index,  this.color.r, this.color.g, this.color.b  );
-//			right_friendAttr0.setXYZ( _index, this.rfcolor.r,kx, ky );
-//			right_friendAttr1.setXYZ( _index, 4*Math.sin(x*Math.PI/this.prjMapData.square_size_x)/20.0,4*Math.cos(Math.PI*y*0.5/this.prjMapData.square_size_y)/12.0, 0 );
+			right_friendAttr0.setXYZ( _index, this.rfcolor.r,kx, ky );
+			right_friendAttr1.setXYZ( _index, 4*Math.sin(sx*Math.PI/this.prjMapData.square_size_x)/20.0,4*Math.cos(Math.PI*sy*0.5/this.prjMapData.square_size_y)/12.0, 0 );
 
 		});
+
+		//console.log("END -------------");
 		positionAttribute.needsUpdate = true;
 		
 		sizesAttr.needsUpdate = true;
 		colorAttr.needsUpdate = true;
-//		right_friendAttr0.needsUpdate = true;
-//		right_friendAttr1.needsUpdate = true;
+		right_friendAttr0.needsUpdate = true;
+		right_friendAttr1.needsUpdate = true;
 	}
 
 	delaunyInitialized = false;
@@ -949,21 +1181,32 @@ diry = diry*0.001;
 
 			for ( var j = 0; j < this.mapCoords.length; j++ ) {					
 
-				var x = this.R * Math.cos(this.mapCoords[j].theta) * Math.cos(this.mapCoords[j].fi);
-				var y = this.R * Math.cos(this.mapCoords[j].theta) * Math.sin(this.mapCoords[j].fi);
-				var z = this.R * Math.sin(this.mapCoords[j].theta);
-	
-				this.mapCoords[j].x = x;
-				this.mapCoords[j].y = y;
-				this.mapCoords[j].z = z;
+//>>>>>>>>>>>>>> move this on direct loading
+//>>>>>>>>>>>>>> projects here also the lines for the multipolygon map even if partial
 
-				const vec = new THREE.Vector3(x,y,z);
+				//var _x = this.R * Math.cos(this.mapCoords[j].theta) * Math.cos(this.mapCoords[j].fi);
+				//var _y = this.R * Math.cos(this.mapCoords[j].theta) * Math.sin(this.mapCoords[j].fi);
+				//var _z = this.R * Math.sin(this.mapCoords[j].theta);
+
+				var _x = this.mapCoords[j].x;
+				var _y = this.mapCoords[j].y;
+				var _z = this.mapCoords[j].z;
+
+				//console.log ("x: " + _x + " y: " + _y + " z: " + _z + " " + this.mapCoords[j].fi + " " + this.mapCoords[j].theta );
+				//console.log ("ix: " + this.mapCoords[j].x + " iy: " + this.mapCoords[j].y + " iz: " + this.mapCoords[j].z + " " + this.mapCoords[j].fi + " " + this.mapCoords[j].theta );
+
+				//this.mapCoords[j].x = x;
+				//this.mapCoords[j].y = y;
+				//this.mapCoords[j].z = z;
+
+				const vec2 = new THREE.Vector3(_x,_y,_z);
+				//const vec = new THREE.Vector3(this.mapCoords[j].x,this.mapCoords[j].y,this.mapCoords[j].z);
 
 				// go for the intersection
 				let raycaster = new THREE.Raycaster();
 
 				let point1 = new THREE.Vector3(vec_origin.x, vec_origin.y, vec_origin.z);
-				let point2 = new THREE.Vector3(vec.x, vec.y, vec.z);
+				let point2 = new THREE.Vector3(vec2.x, vec2.y, vec2.z);
 				
 				let direction = new THREE.Vector3().subVectors(point2, point1).normalize();
 				raycaster.set(point1, direction);
@@ -985,12 +1228,12 @@ diry = diry*0.001;
 					
 					this.square_surface_list[n].worldToLocal(intersectionPoint);
 					intersectionPoint.applyQuaternion(q_inverse);
-
-					vec.x = intersectionPoint.x;
-					vec.y = intersectionPoint.y;
-					vec.z = intersectionPoint.z;					
+					const vec1 = new THREE.Vector3();
+					vec1.x = intersectionPoint.x;
+					vec1.y = intersectionPoint.y;
+					vec1.z = intersectionPoint.z;					
 							
-					let point = vec;
+					let point = vec1;
 					// Rotate the points around the center of the square to make it horizontal
 					const rotatedX = (point.x - centerX) * Math.cos(angle) - (point.y - centerY) * Math.sin(angle) + centerX;
 					const rotatedY = (point.x - centerX) * Math.sin(angle) + (point.y - centerY) * Math.cos(angle) + centerY;
@@ -1006,7 +1249,9 @@ diry = diry*0.001;
 					this.mapCoords[j].spotx = vdest.x;
 					this.mapCoords[j].spoty = vdest.y;
 					this.mapCoords[j].spotz = vdest.z;
-
+					this.mapCoords[j].sx = vdest.x;
+					this.mapCoords[j].sy = vdest.y;
+					this.mapCoords[j].sz = vdest.z;
 
 					this.rfcolor = this.color;
 					this.color.setHSL( vindex / this.maxvindex, 1.0, 0.5 );
@@ -1037,7 +1282,7 @@ diry = diry*0.001;
 						let x = (vindex+n)%(2*vcolor);
 						if (x>vcolor) x = (vcolor - x%vcolor);											
 
-						sizesAttr.setXYZ( vindex, x + 1);
+						sizesAttr.setXYZ( vindex, 3);
 
 						if (vindex > positionAttribute.count){
 							console.log("vindex > positionAttribute.count");
@@ -1056,7 +1301,7 @@ diry = diry*0.001;
 						let x = (vindex+n)%(2*vcolor);
 						if (x>vcolor) x = (vcolor - x%vcolor);						
 
-						this.sizes.push( x + 1);
+						this.sizes.push( 3);
 
 						this.pointsMap.push (vdest);		
 					} 
@@ -1089,7 +1334,7 @@ diry = diry*0.001;
 			this.particlesMap.geometry.setDrawRange( 0, vindex )
 			this.maxvindex = vindex;
 			// update
-			console.log("vindex update" + vindex + "out of " + this.geometryMap.attributes.position.count);
+			//console.log("vindex update" + vindex + "out of " + this.geometryMap.attributes.position.count);
 
 			positionAttribute.needsUpdate = true;
 			colorAttr.needsUpdate = true;
@@ -1287,25 +1532,25 @@ diry = diry*0.001;
 
 	loadRandomMap(){
 		// add another 1000 particles on the sphere
-		for ( let i = 0; i < 100; i ++ ) {					
+		for ( let i = 0; i < 50; i ++ ) {					
 			//var fi = THREE.MathUtils.randFloatSpread( Math.PI );
-			var fi = 2*Math.PI/100 *(i%100);
+			var fi = (i%20)*Math.PI/10.0 ;
 			//var theta = THREE.MathUtils.randFloatSpread( 2*Math.PI/3 * (i%3) );
-			var theta =  2*Math.PI/8 ;//* (i%5) ;
+			var theta =  2*Math.PI/8;
 
-			this.mapCoords.push(new MapCoord(fi,theta));								
+			this.mapCoords.push(new MapCoord(fi,theta, this.R));								
 		}				
 	}
 
 	loadFromRaw(){
 		for (let i = 0; i < this.mapCoordsRaw.length;i++ ){
 			this.mapCoords.push( new MapCoord( Math.PI - 
-				this.mapCoordsRaw[i][0]*(2*Math.PI)/180, -this.mapCoordsRaw[i][1]*2*Math.PI/180));
+				this.mapCoordsRaw[i][0]*(2*Math.PI)/180, -this.mapCoordsRaw[i][1]*2*Math.PI/180, this.R));
 			//console.log(mapCoordsRaw[i]);
 		}
 
 		for (let i = 0; i < this.mapCoordsRaw1.length;i++ ){
-			this.mapCoords.push( new MapCoord( Math.PI - this.mapCoordsRaw1[i][0]*(2*Math.PI)/180, -this.mapCoordsRaw1[i][1]*2*Math.PI/180));
+			this.mapCoords.push( new MapCoord( Math.PI - this.mapCoordsRaw1[i][0]*(2*Math.PI)/180, -this.mapCoordsRaw1[i][1]*2*Math.PI/180, this.R));
 			//console.log(mapCoordsRaw1[i]);
 		}
 	}
@@ -1319,6 +1564,10 @@ diry = diry*0.001;
 			this.mapCoords[i].fi = (i%80)*Math.PI/40.0;
 			this.mapCoords[i].theta = (i%800)*Math.PI/400.0 + Math.PI/2.0;
 			
+			this.mapCoords[i].x = this.R * Math.cos(this.mapCoords[i].theta) * Math.cos(this.mapCoords[i].fi);
+			this.mapCoords[i].y = this.R * Math.cos(this.mapCoords[i].theta) * Math.sin(this.mapCoords[i].fi);
+			this.mapCoords[i].z = this.R * Math.sin(this.mapCoords[i].theta);
+
 			//this.mapCoords[i].speed = Math.sin((this.fi+this.theta)/2.0)/4.0;
 			//this.mapCoords[i].directionx = 0.0;
 			//this.mapCoords[i].directiony = 0.0;
@@ -1337,10 +1586,9 @@ diry = diry*0.001;
 		
 
 		for ( var j = 0; j < this.mapCoords.length; j++ ) {	
-
-			var x = this.R * Math.cos(this.mapCoords[j].theta) * Math.cos(this.mapCoords[j].fi);
-			var y = this.R * Math.cos(this.mapCoords[j].theta) * Math.sin(this.mapCoords[j].fi);
-			var z = this.R * Math.sin(this.mapCoords[j].theta);
+			var x = this.mapCoords[j].x;
+			var y = this.mapCoords[j].y;
+			var z = this.mapCoords[j].z;
 
 			const vec = new THREE.Vector3(x,y,z);		
 
@@ -1361,6 +1609,62 @@ diry = diry*0.001;
 		geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
 		return new THREE.Points( geometry, new THREE.PointsMaterial( { color: 0x008888 } ) );				
 	}
+
+	generateFriendsLines(){		
+		const z = 160;
+		const points1 = [];		
+		const geometry_line1 = new THREE.BufferGeometry();
+
+		// Enumerate lines in friends_group
+		this.friends_group.children.forEach((line) => {
+			line.geometry.dispose(); // Free the buffer of the line
+			this.friends_group.remove(line);
+		});
+
+		
+		this.activeMapCoords.forEach((item, i) => {
+			if ( i == this.show_friend_idx ){
+			//if ( i < 10000 ){
+
+			const geometry_line = new THREE.BufferGeometry();
+
+			const points = [];
+			
+
+			const real_j = item.j;
+			const real_x = this.mapCoords[real_j].sx;
+			const real_y = this.mapCoords[real_j].sy;
+			const real_z = this.mapCoords[real_j].sz;
+			const orig = this.mapCoords[real_j];
+
+			const origin_vec = new THREE.Vector3(real_x,real_y,z);		
+			
+			this.mapCoords[real_j].friends.forEach((_friendaindex, k) => {				
+				points.push (origin_vec);
+				const real_friend = this.mapCoords[this.activeMapCoords[_friendaindex].j];
+				const friend_vec = new THREE.Vector3(real_friend.sx,real_friend.sy,z);
+				points.push (friend_vec);		
+			});
+
+			geometry_line.setFromPoints( points );
+
+			const line = new THREE.Line( geometry_line, new THREE.LineBasicMaterial( { color: 0xffff00 } ) );
+			this.friends_group.add(line);			
+
+			// line between sx and favgx
+			const favg_vec = new THREE.Vector3(orig.favgx,orig.favgy,z);
+			points1.push (origin_vec);
+			points1.push (favg_vec);
+		}
+	
+		});
+
+		geometry_line1.setFromPoints( points1 );
+
+		const line1 = new THREE.Line( geometry_line1, new THREE.LineBasicMaterial( { color: 0x4499ff } ) );
+		this.friends_group.add(line1);
+	}
+
 	// fi , theta, coords /in lat and longitude
 	// index id
 	// hmid, vmid - map sqluare pos	

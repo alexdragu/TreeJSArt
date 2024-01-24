@@ -14,7 +14,7 @@
 	<body>
 		<canvas class="webgl"></canvas>
 
-		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a>  BL Map v0.74<br/>
+		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a>  BL Map v0.75<br/>
 		<b>O</b> orthographic <b>P</b> perspective <b>H</b> hide title <b>
 		</div>
 
@@ -51,16 +51,14 @@
 				vRightFriend2 = right_friend2;
 				vRightFriend3 = right_friend3;
 				vRightFriend4 = right_friend4;
-				
-				
-
-				//vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+								
+				vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
 				//vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
 				vec4 mvFriends = ( vec4(vRightFriend2,0.0) + vec4(vRightFriend3,0.0) + vec4(vRightFriend4,0.0))/3.0;
 				//mvFriends = vec4( position, 1.0 ) + mvFriends/3.0;
 				mvFriends = vec4( position, 1.0 );// + mvFriends/3.0;
 				mvFriends.z = position.z;	
-				vec4 mvPosition = modelViewMatrix * (mvFriends);
+				//vec4 mvPosition = modelViewMatrix * (mvFriends);
 				
 
 				//gl_PointSize = 1.0 * size * ( 300.0 / -mvPosition.z );
@@ -69,8 +67,8 @@
 				gl_PointSize = 2.0 * size *(2.0 + 1.0 * vRightFriend1.x* vRightFriend1.y/20.0);//* ( 300.0 / -mvPosition.z );
 
 				//gl_Position = projectionMatrix * mvPosition;
-				gl_Position = projectionMatrix * (mvPosition + 1.8*vec4(vRightFriend1,0.0));
-				//gl_Position = projectionMatrix * (mvPosition);				
+				//gl_Position = projectionMatrix * (mvPosition + 1.8*vec4(vRightFriend1,0.0));
+				gl_Position = projectionMatrix * (mvPosition);				
 
 			}
 
@@ -307,6 +305,8 @@ function getObjectString(entry) {
 			let clear_color = true;
 			let clear_depth = true;
 
+			let move_map = false;
+
 
 			let lbMap;
 			let autofit = false;
@@ -412,10 +412,10 @@ function getObjectString(entry) {
 				// 153 antarctica
 				// 9 argentina
 				// 132 australia
-				pullRemoteObject (133);
+				//pullRemoteObject (133);
 
-				//lbMap.loadRandomMap();
-				//lbMap.rebuildMapData();						
+				lbMap.loadRandomMap();
+				lbMap.rebuildMapData();						
 				//lbMap.ReGenerateMap(true);
 
 				canvas = document.querySelector('.webgl');
@@ -496,13 +496,16 @@ function getObjectString(entry) {
 					phi_cover: lbMap.phi_cover,
 					theta_cover: lbMap.theta_cover,
 					defIndexfi: lbMap.defIndexfi,
-					defIndextheta: lbMap.defIndextheta
+					defIndextheta: lbMap.defIndextheta,
+					move_map: move_map,
+					show_friend_idx: lbMap.show_friend_idx
 				};
 
 				const gui = new GUI();
 				gui.domElement.setAttribute("id","bluecontrol");
 
 				gui.add( effectController, 'newTess', [ 2, 3, 4, 5, 6, 8, 10, 15, 20, 30, 40, 50 ] ).name( 'Tessellation Level' ).onChange( render );
+				gui.add( effectController, 'move_map' ).name( 'Move P S' ).onChange( render );
 				gui.add( effectController, 'autofit' ).name( 'autofit' ).onChange( render );
 				gui.add( effectController, 'nonblinn' ).name( 'original scale' ).onChange( render );
 				gui.add( effectController, 'newShading', [ 'wireframe', 'flat', 'smooth', 'glossy', 'textured', 'reflective' ] ).name( 'Shading' ).onChange( render );
@@ -538,6 +541,8 @@ function getObjectString(entry) {
 				gui.add( effectController, 'theta_cover', 2*Math.PI/R, 2*Math.PI ).name('Theta Cover').step( 2*Math.PI/R ).listen().onChange( render );
 				gui.add( effectController, 'defIndexfi', Math.PI/R, 2*Math.PI ).name('Phi Offset').step( Math.PI/R ).listen().onChange( render );
 				gui.add( effectController, 'defIndextheta', Math.PI/R, 2*Math.PI ).name('Theta Offset').step( Math.PI/R ).listen().onChange( render );
+
+				gui.add( effectController, 'show_friend_idx', 1, 1200 ).name('FriendIndex').step( 1 ).listen().onChange( render );
 
 				return gui;
 			}
@@ -816,6 +821,10 @@ if (go_auto){
 					lbMap.defineShaderSurfaceDelauny();
 				}
 
+				if (effectController.show_friend_idx != lbMap.show_friend_idx){
+					lbMap.show_friend_idx = effectController.show_friend_idx;				
+				}
+
 				// control panel
 				if ( 
 					effectController.winSizeH != lbMap.window_h ||
@@ -894,8 +903,12 @@ if (go_auto){
 
 				}
 				//lbMap.moveParticleSystemOnSphereSpace(timeBetweenRenders/5600, 6);
-				lbMap.moveParticleSystem(timeBetweenRenders/60,56);
-//				lbMap.delaunatorMap();
+				if (effectController.move_map){
+					lbMap.moveParticleSystem(timeBetweenRenders/60,26);
+				}
+				
+				//lbMap.delaunatorMap();
+				lbMap.generateFriendsLines();
 
 
 				if (show_camhelper != effectController.show_camhelper){
