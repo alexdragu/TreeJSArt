@@ -17,17 +17,10 @@ class MapCoord {
 	constructor(fi, theta, R){
 		this.fi = fi;
 		this.theta = theta;
-/*
-		this.x = x;
-		this.y = y;
-		this.z = z;
-*/
-
 
 		this.x = R * Math.cos(theta) * Math.cos(fi);
 		this.y = R * Math.cos(theta) * Math.sin(fi);
 		this.z = R * Math.sin(theta);
-		//console.log("MapCoord " + this.x + " " + this.y + " " + this.z + " R" + R);
 
 		this.spotx = this.x;
 		this.spoty = this.y;
@@ -40,6 +33,7 @@ class MapCoord {
 
 		this.friends = [];
 		this.is_friend = false;
+
 		// need an autoincrement here
 		this.id = ProjectionMapData.indexCounter++;
 
@@ -151,6 +145,8 @@ class LbMap {
 
 	friends_group = new THREE.Group();
 
+	totalelapsed = 0;
+
 	constructor(scene,object ,R, Vstep, Hstep, window_w, window_h, winxcnt ,winycnt ,fact ,mag, phi_cover, theta_cover){
 		this.scene = scene;
 		this.object = object;
@@ -197,27 +193,16 @@ class LbMap {
 			// Map each string to a MapCoords object
 			console.log ("SplitcoordsArray");
 			return coordsArray.map(coordString => {
-				//console.log (coordString + " " + coordString.substring(0,1) + " " + coordString.slice(1));
+				
 				const sanitizedCoordStringF = coordString.substring(0,1) === '(' ? coordString.slice(1) : coordString;
-				//console.log (sanitizedCoordStringF);
-
-				//const trimmedCoordString = coordString.trim();
+								
 				const trimmedCoordString = sanitizedCoordStringF.trim();
 				const lastCharacter = trimmedCoordString.slice(-1);
 				const sanitizedCoordString = lastCharacter === ')' ? trimmedCoordString.slice(0, -1) : trimmedCoordString;
-				//console.log (sanitizedCoordString);
-
-
-
+				
 				const [x, y] = sanitizedCoordString.trim().split(' ').map(Number);
-				//console.log (x*(Math.PI)/180.0 + " ffff " + y*(Math.PI)/(180.0));
-				//const [x, y] = coordString.trim().split(' ').map(Number);
+
 				var mapCoord = new MapCoord( x*(Math.PI)/180.0, y*(Math.PI)/(180.0), this.R);
-
-//				mapCoord.x = this.R * Math.cos(mapCoord.theta) * Math.cos(mapCoord.fi);
-//				mapCoord.y = this.R * Math.cos(mapCoord.theta) * Math.sin(mapCoord.fi);
-//				mapCoord.z = this.R * Math.sin(mapCoord.theta);
-
 				return mapCoord;
 			});
 		});
@@ -277,15 +262,8 @@ class LbMap {
 
 		for (let i = 0; i < deepCopyTmpArrayMaps.length; i++) {
 			this.arrayOfMaps.push(deepCopyTmpArrayMaps[i].slice());
-			//console.log(tmparraymaps[i]);
 		}
-/*
-		for (let i = 0; i < tmparraymaps.length; i++) {
-			this.arrayOfMaps.push(tmparraymaps[i].slice());
-			//console.log(tmparraymaps[i]);
-		}
-*/		
-		//this.arrayOfMaps.push(newMapCoords);
+
 		this.mapCoords = this.mapCoords.concat(newMapCoords);
 
 		this.rebuildMapData();
@@ -294,11 +272,9 @@ class LbMap {
 
 	 generateLinePolynomial(polygon) {
 		// polygon is a list of MapCoords objects	
-
 		const geometry = new THREE.BufferGeometry();
 		
 		// this one will eat the original 
-		//geometry.setFromPoints( polygon );
 		geometry.setFromPoints( polygon );
 
 		// Return the line polynomial
@@ -365,15 +341,12 @@ class LbMap {
 	 * 	 */
 	regenerateSphereMap(regen){
 		// clean-up
-		for (var n = 0;n<this.square_list.length;n++){								
-			
+		for (var n = 0;n<this.square_list.length;n++){											
 			this.square_list[n].geometry.dispose();
 			this.square_surface_list[n].geometry.dispose();				
-			this.square_flat_list[n].geometry.dispose();
-			
+			this.square_flat_list[n].geometry.dispose();			
 			this.square_group.remove(this.square_list[n]);						
-			this.square_surface_group.remove(this.square_surface_list[n]);						
-			
+			this.square_surface_group.remove(this.square_surface_list[n]);									
 			this.square_flat_group.remove(this.square_flat_list[n]);
 		}
 
@@ -381,8 +354,6 @@ class LbMap {
 		this.square_surface_list = [];
 		this.square_flat_list = [];
 		this.map_lines_list = [];
-
-
 
 		if (this.hide_squares){
 			this.scene.remove(this.square_flat_group);
@@ -438,7 +409,6 @@ class LbMap {
 		const ratio_x = this.out_scr_w/(map_square_size_x * this.prjMapData.y);
 		const ratio_y = this.out_scr_h/(map_square_size_y * this.prjMapData.x);
 	
-
 		const vdest = new THREE.Vector3(
 			amp * ratio_x * (-vec.x - map_square_size_x*(kx-this.defIndexv) + map_square_size_x * (this.prjMapData.y -1)/2.0) , 
 			amp * ratio_y * (vec.y - map_square_size_y*(ky-this.defIndexh) + map_square_size_y * (this.prjMapData.x -1)/2.0) ,
@@ -456,10 +426,8 @@ class LbMap {
 
 
 	setFriends(fcount,i) {
-		var ffound = 0;
 		var fmin = 10000;
 
-		//console.log(" j: " + this.activeMapCoords[i].j + " i: " + i );
 		if (this.activeMapCoords.length <= i) return ;
 
 		// reset all activeCoords friends
@@ -470,34 +438,28 @@ class LbMap {
 			b.friends = [];
 		}
 
-		//console.log(" activeMapCoords	 " + this.activeMapCoords.length + " i: " + i );
 		var a = this.mapCoords[this.activeMapCoords[i].j];
 		
-		//var a = this.mapCoords[i];		
-		//a.friends = [];
 		let mapCoords = this.mapCoords;
 		let activeMapCoords = this.activeMapCoords;
 
 		function compareNumbers(x, y) {
-
 			let _a = mapCoords[activeMapCoords[x].j];
 			let _b = mapCoords[activeMapCoords[y].j];
 			let reper = mapCoords[activeMapCoords[i].j];
-
 			let _aDistance = Math.sqrt((_a.sx-reper.sx)* (_a.sx-reper.sx) + (_a.sy-reper.sy)* (_a.sy-reper.sy));
 			let _bDistance = Math.sqrt((_b.sx-reper.sx)* (_b.sx-reper.sx) + (_b.sy-reper.sy)* (_b.sy-reper.sy));
-
-		//	console.log("x :" + x + " dx: " + _aDistance + " : " + " y : " + y + " dy: " + _bDistance);						
-
 			return _aDistance - _bDistance;
 		}
-
 
 		// get the min from exisintg friends
 		if (a.friends.length > 0){
 			let _b =  this.mapCoords[this.activeMapCoords[a.friends[a.friends.length-1]].j];
 			a.friends.sort(compareNumbers);
-			fmin = Math.sqrt((a.sx-_b.sx)* (a.sx-_b.sx) + (a.sy-_b.sy)* (a.sy-_b.sy));
+
+			// only set fmin if full backet
+			if (a.friends.length >= fcount)
+				fmin = Math.sqrt((a.sx-_b.sx)* (a.sx-_b.sx) + (a.sy-_b.sy)* (a.sy-_b.sy));
 		}
 
 		for ( var k = i + 1; k < this.activeMapCoords.length; k++ ) {
@@ -506,48 +468,48 @@ class LbMap {
 			const aDistance = Math.sqrt((a.sx-b.sx)* (a.sx-b.sx) 
 			+ (a.sy-b.sy)* (a.sy-b.sy));
 
-			if (i==0)
-				console.log ("Compare i" + i + " with j " + j + " " + aDistance + " fmin " + fmin) ;
+			if (i==this.show_friend_idx)
+				console.log ("Compare i" + i + " with j " + k + " " + aDistance + " fmin " + fmin) ;
 
 			if (aDistance<fmin){
-				if (i==0)
-					console.log("PUSH" + aDistance);
-				a.friends.push(k);  // this is then index from activeMapCoords
-				//a.friends.unshift(j);								
+				if (i==this.show_friend_idx) console.log("PUSH:" + k + " Dist: " + aDistance);
+				a.friends.push(k);  // this is the index from activeMapCoords
 				a.type = i;
 				
 				if (a.friends.length < fcount) {
 					//console.log("distance" + aDistance);
 					if (a.friends.length == fcount - 1){
-						fmin = aDistance;
+						//fmin = aDistance;
 						a.friends.sort(compareNumbers);	
+						
+						let _b =  this.mapCoords[this.activeMapCoords[a.friends[a.friends.length-1]].j];					
+						fmin = Math.sqrt((a.sx-_b.sx)* (a.sx-_b.sx) + (a.sy-_b.sy)* (a.sy-_b.sy));						
 
-						if (i==0)
+						if (i==this.show_friend_idx)
 							console.log("New fmin : " + fmin + " len" + a.friends.length + "(1)");
 					}
 
 				} else {
-					//console.log(a.friends);
-
 					// only update fmin if full backet
 					a.friends.sort(compareNumbers);
 					let _b =  this.mapCoords[this.activeMapCoords[a.friends[a.friends.length-1]].j];					
 
 					fmin = Math.sqrt((a.sx-_b.sx)* (a.sx-_b.sx) + (a.sy-_b.sy)* (a.sy-_b.sy));
 
-					if (i==0)
-						console.log("New fmin : " + fmin + " len" + a.friends.length + "(2)");
+					if (i==this.show_friend_idx) console.log("New fmin : " + fmin + " len" + a.friends.length + "(2)");
 
 					a.friends.pop();
-					if (i==0) console.log("POP");
+
+					if (i==this.show_friend_idx) console.log("POP");
 				}		
 
-				if (i==0) {
+				if (i==this.show_friend_idx) {
 					console.log(a.friends + " fmin : " + fmin + " len" + a.friends.length);				
 				}
 			}									
 		}
-		if (i==0) {
+
+		if (i==this.show_friend_idx) {
 			console.log(" i " + i + "Final : " + a.friends + " found: " + a.friends.length +  " act i" + this.activeMapCoords[i].j);
 			console.log(a.friends);
 			this.displayFriendsDistanceFrom(i);
@@ -557,12 +519,8 @@ class LbMap {
 			this.safe_push_friend(i,idx,fcount); 
 		});			
 
-
 		if (i+1<this.activeMapCoords.length)
 			this.setFriends(fcount,i+1);			
-
-		//console.log(a.friends);
-		// frinds of friends
 	}
 
 	safe_push_friend(i,idx,fcount){
@@ -570,31 +528,22 @@ class LbMap {
 		let activeMapCoords = this.activeMapCoords;
 
 		function compareNumbers(x, y) {
-
 			let _a = mapCoords[activeMapCoords[x].j];
 			let _b = mapCoords[activeMapCoords[y].j];
 			let reper = mapCoords[activeMapCoords[idx].j];
-
 			let _aDistance = Math.sqrt((_a.sx-reper.sx)* (_a.sx-reper.sx) + (_a.sy-reper.sy)* (_a.sy-reper.sy));
 			let _bDistance = Math.sqrt((_b.sx-reper.sx)* (_b.sx-reper.sx) + (_b.sy-reper.sy)* (_b.sy-reper.sy));
-
-			//console.log("x :" + x + " dx: " + _aDistance + " : " + " y : " + y + " dy: " + _bDistance);						
-
 			return _aDistance - _bDistance;
 		}
-
-		//console.log("FPUSH in :" + idx + " " + i + " distance : " + this.distance(i,idx));
-
+		
 		let b = this.mapCoords[this.activeMapCoords[idx].j];
 		b.type = idx;
 		b.friends.push(i);
 		b.friends.sort(compareNumbers);
-		//console.log("FPUSH RESULT:" + b.friends);
+
 		if (b.friends.length > fcount ) {
 			b.friends.pop();
-			//console.log("POP");	
 		}
-
 		//this.displayFriendsDistanceFrom(idx);
 	}
 
@@ -708,10 +657,9 @@ class LbMap {
 		let dirx1,diry1,dirz1;
 		let speed,speedx,speedy,speedz;
 		let norm = 100.0;
-		//if (!this.friendsSet){
-			this.setFriends(fcount,0);
-			this.friendsSet = true;
-		//}
+		
+		this.setFriends(fcount,0);
+		this.friendsSet = true;		
 
 		for ( var j = 0; j < this.mapCoords.length; j++ ) {		
 			if (this.mapCoords[j].friends.length >= fcount){				
@@ -728,7 +676,6 @@ class LbMap {
 				diry = 0;
 			}
 
-
 			if (this.mapCoords[j].friends.length >= fcount){				
 				let sumX = 0;
 				let sumY = 0;
@@ -743,7 +690,6 @@ class LbMap {
 				diry1 = 0;
 			}
 
-
 			x = this.mapCoords[j].fi;
 			y = this.mapCoords[j].theta;
 
@@ -755,7 +701,6 @@ class LbMap {
 			}else{			
 				dirx = (x - dirx) / amp;
 				diry = (y - diry) / amp;
-			//	console.log("compute dirx: " + dirx + " diry: " + diry);
 			}
 
 			let amp1 = Math.sqrt((x-dirx1)*(x-dirx1) + (y-diry1)*(y-diry1))
@@ -766,7 +711,6 @@ class LbMap {
 			}else{			
 				dirx1 = (x - dirx1) / amp1;
 				diry1 = (y - diry1) / amp1;
-			//	console.log("compute dirx: " + dirx + " diry: " + diry);
 			}
 
 			speed = this.mapCoords[j].speed;
@@ -789,7 +733,7 @@ class LbMap {
 		}
 
 	}
-	totalelapsed = 0;
+
 	moveParticleSystem(timeBetweenCalls, fcount){
 		this.totalelapsed += timeBetweenCalls;
 		let positionAttribute;
