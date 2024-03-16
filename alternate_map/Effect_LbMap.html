@@ -14,7 +14,7 @@
 	<body>
 		<canvas class="webgl"></canvas>
 
-		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a>  BL Map v0.76<br/>
+		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a>  BL Map v0.77<br/>
 		<b>O</b> orthographic <b>P</b> perspective <b>H</b> hide title <b>
 		</div>
 
@@ -319,8 +319,8 @@ function getObjectString(entry) {
 
 			// Randomizer
 			const attributes = [
-				{ name: 'winxcnt', range: [1, 15], variation: 0.03 , continuous: false},
-				{ name: 'winycnt', range: [1, 15], variation: 0.03 , continuous: false},
+				{ name: 'winxcnt', range: [1, 7], variation: 0.03 , continuous: false},
+				{ name: 'winycnt', range: [1, 7], variation: 0.03 , continuous: false},
 				{ name: 'fact', range: [0.5, 1.0], variation: 0.01 , continuous: false},
 				{ name: 'defIndexfi', range: [Math.PI/R, 2*Math.PI], variation: Math.PI/(2*R) , continuous: true},
 				{ name: 'defIndextheta', range: [Math.PI/R, 2*Math.PI], variation: Math.PI/(2*R) , continuous: true}
@@ -397,7 +397,7 @@ function getObjectString(entry) {
 
 				//cameraRig.add( mesh3 );
 
-				lbMap = new LbMap(scene, mesh, R,2*Math.PI/15.0,2*Math.PI/15.0,0.3*R,0.3*R,5,10,1.0,1.0, Math.PI, Math.PI);
+				lbMap = new LbMap(scene, mesh, R,2*Math.PI/5.0,2*Math.PI/5.0,100,100,1,1,1.0,1.0, Math.PI, Math.PI);
 				lbMap.setScrSize(-0.5 * frustumSize * aspect , frustumSize );
 				lbMap.init();	
 								
@@ -412,10 +412,10 @@ function getObjectString(entry) {
 				// 153 antarctica
 				// 9 argentina
 				// 132 australia
-				//pullRemoteObject (133);
+				pullRemoteObject (133);
 
-				lbMap.loadRandomMap();
-				lbMap.rebuildMapData();						
+				//lbMap.loadRandomMap();
+				//lbMap.rebuildMapData();						
 				//lbMap.ReGenerateMap(true);
 
 				canvas = document.querySelector('.webgl');
@@ -732,14 +732,14 @@ function getObjectString(entry) {
 			}
 
 			function updateEffectsController(){
-				effectController.hstep = lbMap.Hstep;
-				effectController.vstep = lbMap.Vstep;
-				effectController.winSizeW = lbMap.window_w;
-				effectController.winSizeH = lbMap.window_h;
-				effectController.fact = lbMap.fact;
-				effectController.mag = lbMap.mag;
-				effectController.winxcnt = lbMap.winxcnt;
-				effectController.winycnt = lbMap.winycnt;
+				//effectController.hstep = lbMap.Hstep;
+				//effectController.vstep = lbMap.Vstep;
+				//effectController.winSizeW = lbMap.window_w;
+				//effectController.winSizeH = lbMap.window_h;
+				//effectController.fact = lbMap.fact;
+				//effectController.mag = lbMap.mag;
+				//effectController.winxcnt = lbMap.winxcnt;
+				//effectController.winycnt = lbMap.winycnt;
 				effectController.defIndexfi = lbMap.defIndexfi;
 				effectController.defIndextheta = lbMap.defIndextheta;				
 			}
@@ -904,11 +904,11 @@ if (go_auto){
 				}
 				//lbMap.moveParticleSystemOnSphereSpace(timeBetweenRenders/5600, 6);
 				if (effectController.move_map){
-					lbMap.moveParticleSystem(timeBetweenRenders/60,10);
+					lbMap.moveParticleSystem(timeBetweenRenders/60,4);
 				}
 				
 				//lbMap.delaunatorMap();
-				lbMap.generateFriendsLines();
+				//lbMap.generateFriendsLines();
 
 
 				if (show_camhelper != effectController.show_camhelper){

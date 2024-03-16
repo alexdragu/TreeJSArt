@@ -768,44 +768,51 @@ class LbMap {
 		let sx,sy,sz;
 		let dirx,diry,dirz;
 		let dirsx,dirsy,dirsz;
+		let dreflectx = 0.0;
+		let dreflecty = 0.0;
+
 
 		let speed,speedx,speedy,speedz;
 		let norm = 100.0;
 		//console.log("Start -------------");
 		this.activeMapCoords.forEach(({ _index, kx, ky, j }) => {
 
+			let tolerance = 20.0;
+
+			dreflectx = 0.0;
+			dreflecty = 0.0;
 
 			dirx = 0;
 			diry = 0;
+			sx = this.mapCoords[j].sx;
+			sy = this.mapCoords[j].sy;
 
-//			if (this.mapCoords[j].friends.length >= fcount){				
 			if (this.mapCoords[j].friends.length > 0){
 				let sumX = 0;
 				let sumY = 0;
 				let _fcount = this.mapCoords[j].friends.length;
+				
 				for (let i = 0; i < this.mapCoords[j].friends.length; i++) {
 					sumX += this.mapCoords[this.activeMapCoords[this.mapCoords[j].friends[i]].j].sx;
-					sumY += this.mapCoords[this.activeMapCoords[this.mapCoords[j].friends[i]].j].sy;
+					sumY += this.mapCoords[this.activeMapCoords[this.mapCoords[j].friends[i]].j].sy;	
+					
+					let distance = this.distance(_index,this.mapCoords[j].friends[i]);
+					if (distance < tolerance){
+						dreflectx += (sx - this.mapCoords[this.activeMapCoords[this.mapCoords[j].friends[i]].j].sx);
+						dreflecty += (sy - this.mapCoords[this.activeMapCoords[this.mapCoords[j].friends[i]].j].sy);	
+					}
+
 				}
 				dirx = sumX / _fcount;
 				diry = sumY / _fcount;
-				//console.log("HIT");
 			}else{
-//				console.log("NHIT + " + "flen " + this.mapCoords[j].friends.length);
 				dirx = 0;
 				diry = 0;
 			}
 
-
 			dirsx = this.mapCoords[j].spotx+50;
 			dirsy = this.mapCoords[j].spoty+50;
-			//sx = positionAttribute.getX(_index);
-			//sy = positionAttribute.getY(_index);
-			sx = this.mapCoords[j].sx;
-			sy = this.mapCoords[j].sy;
-
 			//console.log("sx: " + sx + " sy: " + sy + " " + this.mapCoords[j].sx + " " + this.mapCoords[j].sy + " " +  " "  + this.mapCoords[j].spotx + " " + this.mapCoords[j].spoty	);
-
 //			dirx = 100;//dirx;
 //			diry = 100;//diry;
 
@@ -843,28 +850,28 @@ class LbMap {
 //dirx = 0.0;//dirx;
 //diry = 0.0;//diry;
 //console.log(dirx + " " + diry + " " + amp + " " + amp1 + " " + this.mapCoords[j].speed + " " + timeBetweenCalls + " " + norm + " " + this.mapCoords[j].directionx + " " + this.mapCoords[j].directiony)	;
-			this.mapCoords[j].speed = -2.1;
+			//this.mapCoords[j].speed = -2.1;
 			//this.mapCoords[j].speed -= Math.sign(amp+amp1)*timeBetweenCalls/norm;						
 			let new_speed = Math.sqrt( (dirx+dirsx)*(dirx+dirsx) + (diry+dirsy)*(diry+dirsy) ); 
 			//speed = 10*this.mapCoords[j].speed*timeBetweenCalls;///new_speed;
 			//onsole.log("speed: " + speed + " " + this.mapCoords[j].speed + " " + new_speed + " " + timeBetweenCalls);
-			speed = this.mapCoords[j].speed*timeBetweenCalls;
+			speed = this.mapCoords[j].speed;//*timeBetweenCalls;
 			//console.log("Speed " + speed + " " + this.mapCoords[j].speed + " " + timeBetweenCalls);
-			//speed = Math.sign(new_speed - speed)*timeBetweenCalls/new_speed;
+			speed += 0.01*Math.sign(new_speed)*timeBetweenCalls/(new_speed);
 
 			//console.log("normd: " + normd + "dx " + dirx + "dy " + diry + "dsx " + dirsx + "dsy " + dirsy);
 //			if (normd==0.0) normd = 1.0;
 
-			this.mapCoords[j].directionx = (dirx+dirsx) / new_speed;
-			this.mapCoords[j].directiony = (diry+dirsy) / new_speed;
+
 
 			speedx = this.mapCoords[j].directionx * speed;
 			speedy = this.mapCoords[j].directiony * speed;						
 
-
+			this.mapCoords[j].directionx = (dirx-dirsx) / new_speed;
+			this.mapCoords[j].directiony = (diry-dirsy) / new_speed;
 
 			//console.log("Aspeedx: " + speedx + " speedy: " + speedy + " " +  speed + " dx" + this.mapCoords[j].directionx + " dy" + this.mapCoords[j].directiony	);
-			sx = sx + speedx * timeBetweenCalls;//Math.sin((this.totalelapsed/100.0)) + sx%30*speedx*Math.cos(sx/j%20.0)/6 ;
+			sx = sx + speedx * timeBetweenCalls;//*Math.sin((this.totalelapsed/100.0)) + sx%30*speedx*Math.cos(sx/j%20.0)/6 ;
 			sy = sy + speedy * timeBetweenCalls;//*Math.sin(sy/(2*j%10.0) +(this.totalelapsed/170.0)) + sy%30*speedx*Math.cos(sy/j%20.0)/6;
 			sz = positionAttribute.getZ(_index);
 
@@ -1039,8 +1046,6 @@ class LbMap {
 			sizesAttr = this.particlesMap.geometry.getAttribute( 'size' );
 			colorAttr = this.particlesMap.geometry.getAttribute( 'color' );			
 		}
-
-		
 
 		this.right_friend0 = [];
 		this.right_friend1 = [];
@@ -1226,7 +1231,7 @@ class LbMap {
 						let x = (vindex+n)%(2*vcolor);
 						if (x>vcolor) x = (vcolor - x%vcolor);											
 
-						sizesAttr.setXYZ( vindex, 3);
+						sizesAttr.setXYZ( vindex, x);
 
 						if (vindex > positionAttribute.count){
 							console.log("vindex > positionAttribute.count");
@@ -1245,7 +1250,7 @@ class LbMap {
 						let x = (vindex+n)%(2*vcolor);
 						if (x>vcolor) x = (vcolor - x%vcolor);						
 
-						this.sizes.push( 3);
+						this.sizes.push( x);
 
 						this.pointsMap.push (vdest);		
 					} 
