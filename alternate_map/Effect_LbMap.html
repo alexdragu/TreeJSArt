@@ -14,7 +14,7 @@
 	<body>
 		<canvas class="webgl"></canvas>
 
-		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a>  BL Map v0.77<br/>
+		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a>  BL Map v0.8<br/>
 		<b>O</b> orthographic <b>P</b> perspective <b>H</b> hide title <b>
 		</div>
 
@@ -904,7 +904,7 @@ if (go_auto){
 				}
 				//lbMap.moveParticleSystemOnSphereSpace(timeBetweenRenders/5600, 6);
 				if (effectController.move_map){
-					lbMap.moveParticleSystem(timeBetweenRenders/60,4);
+					lbMap.moveParticleSystem(timeBetweenRenders/(5*60),10);
 				}
 				
 				//lbMap.delaunatorMap();

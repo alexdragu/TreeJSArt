@@ -427,7 +427,8 @@ class LbMap {
 
 	setFriends(fcount,i) {
 		var fmin = 10000;
-
+		var sightDistance = 10;
+		
 		if (this.activeMapCoords.length <= i) return ;
 
 		// reset all activeCoords friends
@@ -517,7 +518,13 @@ class LbMap {
 		
 		a.friends.forEach((idx) => {
 			this.safe_push_friend(i,idx,fcount); 
-		});			
+		});	
+	
+		if (i==this.show_friend_idx) {
+			console.log(" i " + i + "Final 2: " + a.friends + " found: " + a.friends.length +  " act i" + this.activeMapCoords[i].j);
+			console.log(a.friends);
+			//this.displayFriendsDistanceFrom(i);
+		}
 
 		if (i+1<this.activeMapCoords.length)
 			this.setFriends(fcount,i+1);			
@@ -538,6 +545,12 @@ class LbMap {
 		
 		let b = this.mapCoords[this.activeMapCoords[idx].j];
 		b.type = idx;
+		// remove item before push
+		var index = b.friends.indexOf(i);
+		if (index !== -1) {
+			b.friends.splice(index, 1);
+		}
+
 		b.friends.push(i);
 		b.friends.sort(compareNumbers);
 
@@ -733,7 +746,11 @@ class LbMap {
 		}
 
 	}
+	// sx,sy,sz are particle effects after projection
+	// spotx, spoty,s potz initial shape coordinates
 
+	// * first movement towards spot
+	// * deviation / reflection based on friends
 	moveParticleSystem(timeBetweenCalls, fcount){
 		this.totalelapsed += timeBetweenCalls;
 		let positionAttribute;
@@ -752,7 +769,7 @@ class LbMap {
 //		if (this.friendsSet) return;
 
 		this.setFriends(fcount,0);
-
+		//this.setFriends(this.activeMapCoords.length,0);
 		this.friendsSet = true;
 		
 
@@ -774,7 +791,17 @@ class LbMap {
 
 		let speed,speedx,speedy,speedz;
 		let norm = 100.0;
-		//console.log("Start -------------");
+
+		// Debug frinds are ready so mark them properly
+		console.log("Mark debug Spot Particle");
+		var debugSpot = this.mapCoords[this.activeMapCoords[this.show_friend_idx].j];
+		debugSpot.type = 1001;
+		debugSpot.friends.forEach ( (fidx) => {
+			//console.log("findex : " + fidx + "glb idx "+ this.activeMapCoords[fidx].j +" type : " + this.mapCoords[this.activeMapCoords[fidx].j].type);
+			this.mapCoords[this.activeMapCoords[fidx].j].type = 1000;
+		});
+
+		console.log("Start Processing ActiveMap-------------");
 		this.activeMapCoords.forEach(({ _index, kx, ky, j }) => {
 
 			let tolerance = 20.0;
@@ -801,7 +828,13 @@ class LbMap {
 						dreflectx += (sx - this.mapCoords[this.activeMapCoords[this.mapCoords[j].friends[i]].j].sx);
 						dreflecty += (sy - this.mapCoords[this.activeMapCoords[this.mapCoords[j].friends[i]].j].sy);	
 					}
-
+					/*
+					// keep this simple and set proper type
+					if (this.show_friend_idx == _index){
+						this.mapCoords[this.activeMapCoords[this.mapCoords[j].friends[i]].j].type = 1000;
+						this.mapCoords[j].type = 1001;
+					}
+					*/					
 				}
 				dirx = sumX / _fcount;
 				diry = sumY / _fcount;
@@ -810,11 +843,11 @@ class LbMap {
 				diry = 0;
 			}
 
-			dirsx = this.mapCoords[j].spotx+50;
-			dirsy = this.mapCoords[j].spoty+50;
+			dirsx = this.mapCoords[j].spotx + 50;
+			dirsy = this.mapCoords[j].spoty + 50;
 			//console.log("sx: " + sx + " sy: " + sy + " " + this.mapCoords[j].sx + " " + this.mapCoords[j].sy + " " +  " "  + this.mapCoords[j].spotx + " " + this.mapCoords[j].spoty	);
-//			dirx = 100;//dirx;
-//			diry = 100;//diry;
+			//dirx = 100;//dirx;
+			//diry = 100;//diry;
 
 			this.mapCoords[j].favgx = dirx;
 			this.mapCoords[j].favgy = diry;
@@ -842,9 +875,10 @@ class LbMap {
 				dirsx = (sx - dirsx) / amp1;
 				dirsy = (sy - dirsy) / amp1;
 			}
+
 //			amp1 = 0;
-			dirsx = 0;
-			dirsy = 0;
+//			dirsx = 0;
+//			dirsy = 0;
 
 //amp = 0;
 //dirx = 0.0;//dirx;
@@ -857,12 +891,10 @@ class LbMap {
 			//onsole.log("speed: " + speed + " " + this.mapCoords[j].speed + " " + new_speed + " " + timeBetweenCalls);
 			speed = this.mapCoords[j].speed;//*timeBetweenCalls;
 			//console.log("Speed " + speed + " " + this.mapCoords[j].speed + " " + timeBetweenCalls);
-			speed += 0.01*Math.sign(new_speed)*timeBetweenCalls/(new_speed);
-
+			//speed += Math.sin(new_speed)*0.01*Math.sign(new_speed)*timeBetweenCalls/(new_speed);
+			speed += 0.008*timeBetweenCalls/(new_speed);
 			//console.log("normd: " + normd + "dx " + dirx + "dy " + diry + "dsx " + dirsx + "dsy " + dirsy);
 //			if (normd==0.0) normd = 1.0;
-
-
 
 			speedx = this.mapCoords[j].directionx * speed;
 			speedy = this.mapCoords[j].directiony * speed;						
@@ -878,17 +910,40 @@ class LbMap {
 			positionAttribute.setXYZ(_index, sx, sy, sz);
 			this.mapCoords[j].speed = speed;
 
-			// this si actually useles
+			// this is actually useles
 			this.mapCoords[j].sx = sx;
 			this.mapCoords[j].sy = sy;
 			this.mapCoords[j].sz = sz;
 
-			if (this.mapCoords[j].type == 1)
+			//colorAttr.setXYZ( _index,  1.0, 1.0, 1.0  );
+			
+			if (this.mapCoords[j].type == 1000){
+				//console.log("Red : aidx :" + _index + " glb idx" + j);
 				colorAttr.setXYZ( _index,  1.0, 0.1, 0.1  );
-			else{
-				this.color.setHSL(this.mapCoords[j].type/this.activeMapCoords.length, 0.7 , 0.7 );
-				colorAttr.setXYZ( _index,  this.color.r, this.color.g, this.color.b  );
+			}else{
+
+				if (this.mapCoords[j].type == 1001){
+					colorAttr.setXYZ( _index,  1.0, 1.0, 1.0  );
+					/*
+					var a = this.mapCoords[j];
+					
+					console.log(" i " + _index + "Final 3: " + a.friends + " found: " + a.friends.length +  " act i" + this.activeMapCoords[_index].j);
+					console.log(a.friends);
+
+					a.friends.forEach ( (fidx) => {
+						console.log("findex : " + fidx + "glb idx "+ this.activeMapCoords[fidx].j +" type : " + this.mapCoords[this.activeMapCoords[fidx].j].type);
+					});
+					*/
+				}else{
+					//this.color.setHSL(this.mapCoords[j].type/this.activeMapCoords.length, 0.7 , 0.7 );
+					//colorAttr.setXYZ( _index,  this.color.r, this.color.g, this.color.b  );
+					var a = this.mapCoords[j];
+					//console.log("Blue : aidx :" + _index + " glb idx " + j + " type: " + a.type);			
+					colorAttr.setXYZ( _index,  0.1, 0.1, 0.9  );
+				}
+			//colorAttr.setXYZ( _index,  this.color.r, this.color.g, this.color.b  );
 			}
+			
 
 			//console.log(_index +" " + this.totalelapsed + " " );
 
