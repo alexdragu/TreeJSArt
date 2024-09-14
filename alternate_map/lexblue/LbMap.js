@@ -855,8 +855,10 @@ class LbMap {
 			}
 
 			// dirsx is a global target spot
-			dirsx = this.mapCoords[j].spotx + 50;
-			dirsy = this.mapCoords[j].spoty + 50;
+			//dirsx = this.mapCoords[j].spotx + 10;
+			//dirsy = this.mapCoords[j].spoty + 10;
+			dirsx = this.mapCoords[j].spotx + Math.sin(dirx/10)*10;
+			dirsy = this.mapCoords[j].spoty + Math.sin(diry/10)*10;
 			//console.log("sx: " + sx + " sy: " + sy + " " + this.mapCoords[j].sx + " " + this.mapCoords[j].sy + " " +  " "  + this.mapCoords[j].spotx + " " + this.mapCoords[j].spoty	);
 			//dirx = 100;//dirx;
 			//diry = 100;//diry;
@@ -888,15 +890,19 @@ class LbMap {
 				dirsy = (sy - dirsy) / amp1;
 			}
 
-//			amp1 = 0;
-//			dirsx = 0;
-//			dirsy = 0;
-
+//amp1 = 0;
+dirsx = 0;
+dirsy = 0;
+// Temopperate the imact of sport forced position
+//dirsx/=200;
+//dirsx/=200;
 //amp = 0;
-//dirx = 0.0;//dirx;
-//diry = 0.0;//diry;
+//dirx = 0.0;
+//diry = 0.0;
+
 //console.log(dirx + " " + diry + " " + amp + " " + amp1 + " " + this.mapCoords[j].speed + " " + timeBetweenCalls + " " + norm + " " + this.mapCoords[j].directionx + " " + this.mapCoords[j].directiony)	;
-			//this.mapCoords[j].speed = -2.1;
+
+//this.mapCoords[j].speed = -2.1;
 			//this.mapCoords[j].speed -= Math.sign(amp+amp1)*timeBetweenCalls/norm;	
 
 			let new_speed = Math.sqrt( (dirx+dirsx)*(dirx+dirsx) + (diry+dirsy)*(diry+dirsy) ); 
@@ -906,7 +912,7 @@ class LbMap {
 			//console.log("Speed " + speed + " " + this.mapCoords[j].speed + " " + timeBetweenCalls);
 			//speed += Math.sin(new_speed)*0.01*Math.sign(new_speed)*timeBetweenCalls/(new_speed);
 			//speed += timeBetweenCalls/(new_speed);
-			speed -= timeBetweenCalls/(new_speed);
+			speed -= timeBetweenCalls*(new_speed);
 			//console.log("normd: " + normd + "dx " + dirx + "dy " + diry + "dsx " + dirsx + "dsy " + dirsy);
 //			if (normd==0.0) normd = 1.0;
 
@@ -930,7 +936,7 @@ class LbMap {
 			this.mapCoords[j].sz = sz;
 
 			//colorAttr.setXYZ( _index,  1.0, 1.0, 1.0  );
-			
+// debug coloring	- very ugly		
 			if (this.mapCoords[j].type == 1000){
 				//console.log("Red : aidx :" + _index + " glb idx" + j);
 				colorAttr.setXYZ( _index,  1.0, 0.1, 0.1  );

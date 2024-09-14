@@ -14,7 +14,7 @@
 	<body>
 		<canvas class="webgl"></canvas>
 
-		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a>  BL Map Version v0.9<br/>
+		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a>  BL Map Version v0.91<br/>
 		<b>O</b> orthographic <b>P</b> perspective <b>H</b> hide title <b>
 		</div>
 
@@ -332,6 +332,7 @@ function getObjectString(entry) {
 			let objCount = 0;
 
 			let countries = [];
+			var hrap = 1.0;
 
 			init();
 			animate();
@@ -357,7 +358,14 @@ function getObjectString(entry) {
 				scene.add( cameraPerspectiveHelper );
 
 				//
-				cameraOrtho = new THREE.OrthographicCamera( 0.5 * frustumSize * aspect / - 2, 0.5 * frustumSize * aspect / 2, frustumSize / 2, frustumSize / - 2, 150, 1000 );
+				//cameraOrtho = new THREE.OrthographicCamera( 0.5 * frustumSize * aspect / - 2, 0.5 * frustumSize * aspect / 2, frustumSize / 2, frustumSize / - 2, 150, 1000 );
+
+				cameraOrtho = new THREE.OrthographicCamera
+				( hrap * frustumSize * aspect / - 2, 
+				hrap *  frustumSize * aspect / 2, 
+				frustumSize / 2, 
+				frustumSize / - 2, 
+				150, 1000 );
 
 				cameraOrthoHelper = new THREE.CameraHelper( cameraOrtho );
 				scene.add( cameraOrthoHelper );
@@ -439,6 +447,7 @@ function getObjectString(entry) {
 				window.addEventListener('dblclick', onDblclick);
 
 				controls = new TrackballControls( camera,  renderer.domElement);  //				
+				//controls = new TrackballControls( cameraOrtho,  renderer.domElement);  //				
 
 				gui = setupGui();
 
@@ -691,6 +700,7 @@ function getObjectString(entry) {
 
 			function onWindowResize() {
 
+				var hrep = 1.0;
 				SCREEN_WIDTH = window.innerWidth;
 				SCREEN_HEIGHT = window.innerHeight;
 				aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
@@ -703,15 +713,17 @@ function getObjectString(entry) {
 				cameraPerspective.aspect = 0.5 * aspect;
 				cameraPerspective.updateProjectionMatrix();
 
-				cameraOrtho.left = - 0.5 * frustumSize * aspect / 2;
-				cameraOrtho.right = 0.5 * frustumSize * aspect / 2;
-				cameraOrtho.top = frustumSize / 2;
-				cameraOrtho.bottom = - frustumSize / 2;
+				cameraOrtho.left = hrep * frustumSize * aspect / -2;
+				cameraOrtho.right = hrep * frustumSize * aspect / 2;
+				cameraOrtho.top = frustumSize / -2;
+				cameraOrtho.bottom = frustumSize / 2;
 				cameraOrtho.updateProjectionMatrix();
 
 				//lbMap.setScrSize(-0.5 * frustumSize * aspect / - 2, frustumSize / 2 );
 				//lbMap.updateMap();
 				//lbMap.updateWindows();
+				
+				console.log("____________________");
 
 				lbMap.ReGenerateMap(false);
 
@@ -904,7 +916,7 @@ if (go_auto){
 				}
 				//lbMap.moveParticleSystemOnSphereSpace(timeBetweenRenders/5600, 6);
 				if (effectController.move_map){
-					lbMap.moveParticleSystem(timeBetweenRenders/(5*60),10);
+					lbMap.moveParticleSystem(timeBetweenRenders/(5*60),30);
 				}
 				
 				//lbMap.delaunatorMap();
@@ -949,7 +961,9 @@ if (go_auto){
 
 				activeHelper.visible = false;
 
-				renderer.setViewport( 0, 0, SCREEN_WIDTH / 2, SCREEN_HEIGHT );
+				//renderer.setViewport( 0, 0, SCREEN_WIDTH / 2, SCREEN_HEIGHT );
+				renderer.setViewport( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT );
+
 				renderer.render( scene, activeCamera );
 
 				if (show_camhelper){
