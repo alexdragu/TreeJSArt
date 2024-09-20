@@ -484,12 +484,14 @@ class LbMap {
 			//if (aDistance > tolerance)
 			//		continue;
 
-			if (i==this.show_friend_idx)
-				console.log ("Compare i" + i + " with j " + k + " " + aDistance + " fmin " + fmin + " tol: " + tolerance) ;
+			//if (i==this.show_friend_idx)
+			//	console.log ("Compare i" + i + " with j " + k + " " + aDistance + " fmin " + fmin + " tol: " + tolerance) ;
 
 			// if within the already existing friends
 			if ((aDistance<fmin) && (aDistance < tolerance)){ 
-				if (i==this.show_friend_idx) console.log("PUSH:" + k + " Dist: " + aDistance);
+				//if (i==this.show_friend_idx) 
+				//	console.log("PUSH:" + k + " Dist: " + aDistance);
+				
 				a.friends.push(k);  // this is the index from activeMapCoords
 				a.type = i;
 				
@@ -502,8 +504,8 @@ class LbMap {
 						let _b =  this.mapCoords[this.activeMapCoords[a.friends[a.friends.length-1]].j];					
 						fmin = Math.sqrt((a.sx-_b.sx)* (a.sx-_b.sx) + (a.sy-_b.sy)* (a.sy-_b.sy));						
 
-						if (i==this.show_friend_idx)
-							console.log("New fmin : " + fmin + " len" + a.friends.length + "(1)");
+						//if (i==this.show_friend_idx)
+						//	console.log("New fmin : " + fmin + " len" + a.friends.length + "(1)");
 					}
 
 				} else {
@@ -513,25 +515,25 @@ class LbMap {
 
 					fmin = Math.sqrt((a.sx-_b.sx)* (a.sx-_b.sx) + (a.sy-_b.sy)* (a.sy-_b.sy));
 
-					if (i==this.show_friend_idx) console.log("New fmin : " + fmin + " len" + a.friends.length + "(2)");
+					//if (i==this.show_friend_idx) console.log("New fmin : " + fmin + " len" + a.friends.length + "(2)");
 
 					a.friends.pop();
 
-					if (i==this.show_friend_idx) console.log("POP");
+					//if (i==this.show_friend_idx) console.log("POP");
 				}		
 
-				if (i==this.show_friend_idx) {
-					console.log(a.friends + " fmin : " + fmin + " len" + a.friends.length);				
-				}
+				//if (i==this.show_friend_idx) {
+				//	console.log(a.friends + " fmin : " + fmin + " len" + a.friends.length);				
+				//}
 			}else{
 			//	console.log("NEVER HIT");
 			}									
 		}
 
 		if (i==this.show_friend_idx) {
-			console.log(" i " + i + "Final : " + a.friends + " found: " + a.friends.length +  " act i" + this.activeMapCoords[i].j);
-			console.log(a.friends);
-			this.displayFriendsDistanceFrom(i);
+			//console.log(" i " + i + "Final : " + a.friends + " found: " + a.friends.length +  " act i" + this.activeMapCoords[i].j);
+			//console.log(a.friends);
+			//this.displayFriendsDistanceFrom(i);
 		}
 		
 		a.friends.forEach((idx) => {
@@ -539,8 +541,8 @@ class LbMap {
 		});	
 	
 		if (i==this.show_friend_idx) {
-			console.log(" i " + i + "Final 2: " + a.friends + " found: " + a.friends.length +  " act i" + this.activeMapCoords[i].j);
-			console.log(a.friends);
+			//console.log(" i " + i + "Final 2: " + a.friends + " found: " + a.friends.length +  " act i" + this.activeMapCoords[i].j);
+			//console.log(a.friends);
 			//this.displayFriendsDistanceFrom(i);
 		}
 
@@ -769,7 +771,7 @@ class LbMap {
 
 	// * first movement towards spot
 	// * deviation / reflection based on friends
-	moveParticleSystem(timeBetweenCalls, fcount){
+	moveParticleSystem(timeBetweenCalls, fcount, proximity, refrien){
 		this.totalelapsed += timeBetweenCalls;
 		let positionAttribute;
 		let right_friendAttr0;
@@ -786,7 +788,9 @@ class LbMap {
 
 //		if (this.friendsSet) return;
 
-		this.setFriends(fcount,0,30.0);
+		if (refrien)
+			this.setFriends(fcount,0,proximity);
+
 		//this.setFriends(this.activeMapCoords.length,0);
 		this.friendsSet = true;
 		
@@ -807,22 +811,24 @@ class LbMap {
 		let dreflecty = 0.0;
 
 
-		let speed,speedx,speedy,speedz;
+		let speed,dispx, dispy;
 		let norm = 100.0;
 
 		// Debug frinds are ready so mark them properly
-		console.log("Mark debug Spot Particle");
+		//console.log("Mark debug Spot Particle");
 		var debugSpot = this.mapCoords[this.activeMapCoords[this.show_friend_idx].j];
 		debugSpot.type = 1001;
 		debugSpot.friends.forEach ( (fidx) => {
 			//console.log("findex : " + fidx + "glb idx "+ this.activeMapCoords[fidx].j +" type : " + this.mapCoords[this.activeMapCoords[fidx].j].type);
 			this.mapCoords[this.activeMapCoords[fidx].j].type = 1000;
 		});
+		console.log(debugSpot.spotx.toFixed(2) + " (<-spx, spy->)" + debugSpot.spoty.toFixed(2));
 
-		console.log("Start Processing ActiveMap-------------");
+		//console.log("Start Processing ActiveMap-------------");
 		this.activeMapCoords.forEach(({ _index, kx, ky, j }) => {
 
-			let tolerance = 20.0;
+			// not sure why this was added
+			let tolerance = 1000;
 
 			dreflectx = 0.0;
 			dreflecty = 0.0;
@@ -855,13 +861,10 @@ class LbMap {
 			}
 
 			// dirsx is a global target spot
-			//dirsx = this.mapCoords[j].spotx + 10;
-			//dirsy = this.mapCoords[j].spoty + 10;
-			dirsx = this.mapCoords[j].spotx + Math.sin(dirx/10)*10;
-			dirsy = this.mapCoords[j].spoty + Math.sin(diry/10)*10;
+			dirsx = this.mapCoords[j].spotx + 80;
+			dirsy = this.mapCoords[j].spoty + 80;
+
 			//console.log("sx: " + sx + " sy: " + sy + " " + this.mapCoords[j].sx + " " + this.mapCoords[j].sy + " " +  " "  + this.mapCoords[j].spotx + " " + this.mapCoords[j].spoty	);
-			//dirx = 100;//dirx;
-			//diry = 100;//diry;
 
 			this.mapCoords[j].favgx = dirx;
 			this.mapCoords[j].favgy = diry;
@@ -876,6 +879,9 @@ class LbMap {
 				diry = 0.0;
 				amp = 0.0;
 			}else{			
+				//dirx = (sx - dirx) ;/// amp;		VL
+				//diry = (sy - diry) ;/// amp;      VL
+
 				dirx = (sx - dirx) / amp;
 				diry = (sy - diry) / amp;
 			}
@@ -886,17 +892,19 @@ class LbMap {
 				dirsy = 0.0;
 				amp1 = 0.0;
 			}else{			
-				dirsx = (sx - dirsx) / amp1;
-				dirsy = (sy - dirsy) / amp1;
+				dirsx = (sx - dirsx) ;/// amp1;
+				dirsy = (sy - dirsy) ;/// amp1;
 			}
 
 //amp1 = 0;
 dirsx = 0;
 dirsy = 0;
-// Temopperate the imact of sport forced position
+
+// Temperate the imact of sport forced position
 //dirsx/=200;
-//dirsx/=200;
+//dirsy/=200;
 //amp = 0;
+
 //dirx = 0.0;
 //diry = 0.0;
 
@@ -910,21 +918,40 @@ dirsy = 0;
 			//onsole.log("speed: " + speed + " " + this.mapCoords[j].speed + " " + new_speed + " " + timeBetweenCalls);
 			speed = this.mapCoords[j].speed;//*timeBetweenCalls;
 			//console.log("Speed " + speed + " " + this.mapCoords[j].speed + " " + timeBetweenCalls);
-			//speed += Math.sin(new_speed)*0.01*Math.sign(new_speed)*timeBetweenCalls/(new_speed);
-			//speed += timeBetweenCalls/(new_speed);
-			speed -= timeBetweenCalls*(new_speed);
+			//speed -= Math.sin(new_speed)*0.1*Math.sign(new_speed)*timeBetweenCalls/(new_speed);
+			
+			
+			//speed = timeBetweenCalls/(new_speed);
+			//speed = -1000 * timeBetweenCalls*(new_speed);
+			//new_speed = amp;
+			
+			//speed =  -timeBetweenCalls ;/// (new_speed);  // VL
+			//speed -= 0.2* timeBetweenCalls*(new_speed);
+			//speed = -1000* timeBetweenCalls*(new_speed);  // this is ok
+			speed = 400*(-1+Math.sin(this.mapCoords[j].type)/2.0)*timeBetweenCalls*(new_speed);  // this is ok
+			
+
 			//console.log("normd: " + normd + "dx " + dirx + "dy " + diry + "dsx " + dirsx + "dsy " + dirsy);
 //			if (normd==0.0) normd = 1.0;
 
-			speedx = this.mapCoords[j].directionx * speed;
-			speedy = this.mapCoords[j].directiony * speed;						
+			dispx = this.mapCoords[j].directionx * speed ;
+			dispy = this.mapCoords[j].directiony * speed ;					
 
-			this.mapCoords[j].directionx = (dirx+dirsx) / new_speed;
-			this.mapCoords[j].directiony = (diry+dirsy) / new_speed;
+			//this.mapCoords[j].directionx = (dirx+dirsx) ;/// new_direction vector; // VL
+			//this.mapCoords[j].directiony = (diry+dirsy) ;/// new_direction vector;  // VL
+
+			this.mapCoords[j].directionx = (dirx+dirsx) / new_speed;  
+			this.mapCoords[j].directiony = (diry+dirsy) / new_speed;  
 
 			//console.log("Aspeedx: " + speedx + " speedy: " + speedy + " " +  speed + " dx" + this.mapCoords[j].directionx + " dy" + this.mapCoords[j].directiony	);
-			sx = sx + speedx * timeBetweenCalls;//*Math.sin((this.totalelapsed/100.0)) + sx%30*speedx*Math.cos(sx/j%20.0)/6 ;
-			sy = sy + speedy * timeBetweenCalls;//*Math.sin(sy/(2*j%10.0) +(this.totalelapsed/170.0)) + sy%30*speedx*Math.cos(sy/j%20.0)/6;
+			
+			
+			sx = sx + dispx ;// VL //*Math.sin((this.totalelapsed/100.0)) + sx%30*speedx*Math.cos(sx/j%20.0)/6 ;
+			sy = sy + dispy ;// VL //*Math.sin(sy/(2*j%10.0) +(this.totalelapsed/170.0)) + sy%30*speedx*Math.cos(sy/j%20.0)/6;
+			
+			sx = sx + dispx * timeBetweenCalls;
+			sy = sy + dispy * timeBetweenCalls;
+			
 			sz = positionAttribute.getZ(_index);
 
 			positionAttribute.setXYZ(_index, sx, sy, sz);
@@ -935,30 +962,17 @@ dirsy = 0;
 			this.mapCoords[j].sy = sy;
 			this.mapCoords[j].sz = sz;
 
-			//colorAttr.setXYZ( _index,  1.0, 1.0, 1.0  );
-// debug coloring	- very ugly		
+			// debug coloring	- very ugly		
 			if (this.mapCoords[j].type == 1000){
-				//console.log("Red : aidx :" + _index + " glb idx" + j);
 				colorAttr.setXYZ( _index,  1.0, 0.1, 0.1  );
 			}else{
 
 				if (this.mapCoords[j].type == 1001){
 					colorAttr.setXYZ( _index,  1.0, 1.0, 1.0  );
-					/*
-					var a = this.mapCoords[j];
-					
-					console.log(" i " + _index + "Final 3: " + a.friends + " found: " + a.friends.length +  " act i" + this.activeMapCoords[_index].j);
-					console.log(a.friends);
-
-					a.friends.forEach ( (fidx) => {
-						console.log("findex : " + fidx + "glb idx "+ this.activeMapCoords[fidx].j +" type : " + this.mapCoords[this.activeMapCoords[fidx].j].type);
-					});
-					*/
 				}else{
 					//this.color.setHSL(this.mapCoords[j].type/this.activeMapCoords.length, 0.7 , 0.7 );
 					//colorAttr.setXYZ( _index,  this.color.r, this.color.g, this.color.b  );
-					var a = this.mapCoords[j];
-					//console.log("Blue : aidx :" + _index + " glb idx " + j + " type: " + a.type);			
+					var a = this.mapCoords[j];	
 					colorAttr.setXYZ( _index,  0.1, 0.1, 0.9  );
 				}
 			//colorAttr.setXYZ( _index,  this.color.r, this.color.g, this.color.b  );
@@ -1302,7 +1316,7 @@ dirsy = 0;
 							//right_friendAttr4.setXYZ(vindex,0,0,0);
 						}
 
-						let vcolor = 20;
+						let vcolor = 40;
 						let x = (vindex+n)%(2*vcolor);
 						if (x>vcolor) x = (vcolor - x%vcolor);											
 

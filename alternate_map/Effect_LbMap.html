@@ -14,7 +14,7 @@
 	<body>
 		<canvas class="webgl"></canvas>
 
-		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a>  BL Map Version v0.91<br/>
+		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a>  BL Map Version v0.92<br/>
 		<b>O</b> orthographic <b>P</b> perspective <b>H</b> hide title <b>
 		</div>
 
@@ -275,7 +275,7 @@ function getObjectString(entry) {
 			let SCREEN_WIDTH = window.innerWidth;
 			let SCREEN_HEIGHT = window.innerHeight;
 			let aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
-
+			let scrrapmap = 1;
 			let container, stats;
 			let camera, scene, renderer, mesh, mesh3, controls;
 			let cameraRig, activeCamera, activeHelper;
@@ -283,7 +283,7 @@ function getObjectString(entry) {
 			let cameraPerspectiveHelper, cameraOrthoHelper;
 
 			let effectController;
-			const frustumSize = 600;
+			const frustumSize = 1800;
 
 			// required for GUI
 			let tess = - 1;	// force initialization
@@ -406,7 +406,7 @@ function getObjectString(entry) {
 				//cameraRig.add( mesh3 );
 
 				lbMap = new LbMap(scene, mesh, R,2*Math.PI/5.0,2*Math.PI/5.0,100,100,1,1,1.0,1.0, Math.PI, Math.PI);
-				lbMap.setScrSize(-0.5 * frustumSize * aspect , frustumSize );
+				lbMap.setScrSize(-0.5 * frustumSize * aspect * scrrapmap, frustumSize*scrrapmap );
 				lbMap.init();	
 								
 				lbMap.factory();
@@ -435,7 +435,7 @@ function getObjectString(entry) {
 
 				renderer.autoClear = false;
 
-				stats = new Stats();
+				stats = new Stats('mapCoords','activeSpots', 'speedSubj', 'spotsubj');
 
 				container.appendChild( stats.dom );
 				stats.dom.setAttribute("id","statspanel");
@@ -479,7 +479,9 @@ function getObjectString(entry) {
 				effectController = {
 					newTess: 15,
 					autofit: lbMap.autofit,
-					nonblinn: false,
+					friends: 30,
+					proximity: 20,
+					refriend: true,
 					newShading: 'glossy',
 					show_camhelper: show_camhelper,
 
@@ -516,7 +518,9 @@ function getObjectString(entry) {
 				gui.add( effectController, 'newTess', [ 2, 3, 4, 5, 6, 8, 10, 15, 20, 30, 40, 50 ] ).name( 'Tessellation Level' ).onChange( render );
 				gui.add( effectController, 'move_map' ).name( 'Move P S' ).onChange( render );
 				gui.add( effectController, 'autofit' ).name( 'autofit' ).onChange( render );
-				gui.add( effectController, 'nonblinn' ).name( 'original scale' ).onChange( render );
+				gui.add( effectController, 'friends' ).name( 'friends' ).onChange( render );
+				gui.add( effectController, 'proximity' ).name( 'proximity' ).onChange( render );
+				gui.add( effectController, 'refriend' ).name( 'refriend' ).onChange( render );
 				gui.add( effectController, 'newShading', [ 'wireframe', 'flat', 'smooth', 'glossy', 'textured', 'reflective' ] ).name( 'Shading' ).onChange( render );
 
 				gui.add( effectController, 'show_camhelper' ).name( 'Cam Helper' ).onChange( render );
@@ -738,9 +742,18 @@ function getObjectString(entry) {
 
 				render();
 
-				stats.update();
-				
+				stats.update(
+					lbMap.mapCoords.length, 
+					lbMap.activeMapCoords.length,
+					lbMap.mapCoords[lbMap.activeMapCoords[lbMap.show_friend_idx].j].speed.toFixed(2) + 
+					"("+lbMap.mapCoords[lbMap.activeMapCoords[lbMap.show_friend_idx].j].spotx.toFixed(2) + " " +
+					lbMap.mapCoords[lbMap.activeMapCoords[lbMap.show_friend_idx].j].spoty.toFixed(2) +")"
+					,
+					lbMap.mapCoords[lbMap.activeMapCoords[lbMap.show_friend_idx].j].directionx.toFixed(2) + " " +
+					lbMap.mapCoords[lbMap.activeMapCoords[lbMap.show_friend_idx].j].directiony.toFixed(2)  
+				);
 
+				//console.log("RRR" + lbMap.mapCoords.length + " " + lbMap.activeMapCoords.length)
 			}
 
 			function updateEffectsController(){
@@ -915,10 +928,21 @@ if (go_auto){
 
 				}
 				//lbMap.moveParticleSystemOnSphereSpace(timeBetweenRenders/5600, 6);
+
 				if (effectController.move_map){
-					lbMap.moveParticleSystem(timeBetweenRenders/(5*60),30);
+					lbMap.moveParticleSystem(timeBetweenRenders/(5*60),
+					effectController.friends,
+					effectController.proximity, 
+					effectController.refriend);
 				}
-				
+
+/*
+				if (effectController.move_map){
+					lbMap.moveParticleSystem(timeBetweenRenders/(5*60),
+					30,
+					20);
+				}
+*/			
 				//lbMap.delaunatorMap();
 				//lbMap.generateFriendsLines();
 

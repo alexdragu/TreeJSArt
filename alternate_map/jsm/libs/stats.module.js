@@ -1,4 +1,4 @@
-var Stats = function () {
+var Stats = function (name1, name2, name3, name4) {
 
 	var mode = 0;
 
@@ -21,28 +21,23 @@ var Stats = function () {
 	}
 
 	function showPanel( id ) {
-
 		for ( var i = 0; i < container.children.length; i ++ ) {
 
 			container.children[ i ].style.display = i === id ? 'block' : 'none';
 
 		}
-
 		mode = id;
-
 	}
 
 	//
 
 	var beginTime = ( performance || Date ).now(), prevTime = beginTime, frames = 0;
 
-	var fpsPanel = addPanel( new Stats.Panel( 'FPS', '#0ff', '#002' ) );
+	var fpsPanel = addPanel( new Stats.Panel( 'FPS',name1,name2,name3,name4, '#0ff', '#002' ) );
 	var msPanel = addPanel( new Stats.Panel( 'MS', '#0f0', '#020' ) );
 
 	if ( self.performance && self.performance.memory ) {
-
 		var memPanel = addPanel( new Stats.Panel( 'MB', '#f08', '#201' ) );
-
 	}
 
 	showPanel( 0 );
@@ -62,15 +57,17 @@ var Stats = function () {
 
 		},
 
-		end: function () {
+		end: function (p1, p2, p3, p4) {
 
 			frames ++;
 
 			var time = ( performance || Date ).now();
 
+			fpsPanel.setparams(p1,p2,p3,p4);
+			//console.log(" p1 p2" + p1 + " _" + p2)
 			msPanel.update( time - beginTime, 200 );
 
-			if ( time >= prevTime + 1000 ) {
+			if ( time >= prevTime + 200 ) {
 
 				fpsPanel.update( ( frames * 1000 ) / ( time - prevTime ), 100 );
 
@@ -90,9 +87,9 @@ var Stats = function () {
 
 		},
 
-		update: function () {
+		update: function (p1,p2,p3,p4) {
 
-			beginTime = this.end();
+			beginTime = this.end(p1,p2,p3,p4);
 
 		},
 
@@ -105,12 +102,13 @@ var Stats = function () {
 
 };
 
-Stats.Panel = function ( name, fg, bg ) {
+Stats.Panel = function ( name, name1, name2,name3,name4, fg, bg ) {
 
 	var min = Infinity, max = 0, round = Math.round;
 	var PR = round( window.devicePixelRatio || 1 );
-
-	var WIDTH = 80 * PR, HEIGHT = 48 * PR,
+	var absHeight = 150;
+	var absWidth = 220;
+	var WIDTH = absWidth * PR, HEIGHT = absHeight * PR,
 		TEXT_X = 3 * PR, TEXT_Y = 2 * PR,
 		GRAPH_X = 3 * PR, GRAPH_Y = 15 * PR,
 		GRAPH_WIDTH = 74 * PR, GRAPH_HEIGHT = 30 * PR;
@@ -118,7 +116,7 @@ Stats.Panel = function ( name, fg, bg ) {
 	var canvas = document.createElement( 'canvas' );
 	canvas.width = WIDTH;
 	canvas.height = HEIGHT;
-	canvas.style.cssText = 'width:80px;height:48px';
+	canvas.style.cssText = 'width:'+absWidth+'px;height:'+ absHeight+'px';
 
 	var context = canvas.getContext( '2d' );
 	context.font = 'bold ' + ( 9 * PR ) + 'px Helvetica,Arial,sans-serif';
@@ -127,18 +125,35 @@ Stats.Panel = function ( name, fg, bg ) {
 	context.fillStyle = bg;
 	context.fillRect( 0, 0, WIDTH, HEIGHT );
 
+		let prm1 = 0;
+		let prm2 = 0;
+		let prm3 = 0;
+		let prm4 = 0;
+
+/*
 	context.fillStyle = fg;
 	context.fillText( name, TEXT_X, TEXT_Y );
-	context.fillRect( GRAPH_X, GRAPH_Y, GRAPH_WIDTH, GRAPH_HEIGHT );
+	context.fillRect( GRAPH_X, GRAPH_Y, GRAPH_WIDTH, GRAPH_HEIGHT-20 );
 
 	context.fillStyle = bg;
 	context.globalAlpha = 0.9;
-	context.fillRect( GRAPH_X, GRAPH_Y, GRAPH_WIDTH, GRAPH_HEIGHT );
-
+	context.fillRect( GRAPH_X, GRAPH_Y, GRAPH_WIDTH, GRAPH_HEIGHT -30);
+*/	
+/*
+	context.fillStyle = fg;
+	context.fillText( name, TEXT_X, TEXT_Y );
+	context.fillRect( GRAPH_X, GRAPH_Y+GRAPH_HEIGHT, GRAPH_WIDTH, GRAPH_HEIGHT );
+*/
 	return {
 
 		dom: canvas,
-
+		setparams: function (p1,p2,p3,p4){
+			prm1 = p1;
+			prm2 = p2;
+			prm3 = p3;
+			prm4 = p4;
+		},
+		
 		update: function ( value, maxValue ) {
 
 			min = Math.min( min, value );
@@ -146,9 +161,35 @@ Stats.Panel = function ( name, fg, bg ) {
 
 			context.fillStyle = bg;
 			context.globalAlpha = 1;
-			context.fillRect( 0, 0, WIDTH, GRAPH_Y );
+			context.fillRect( 0,0, WIDTH, GRAPH_Y );
 			context.fillStyle = fg;
+
 			context.fillText( round( value ) + ' ' + name + ' (' + round( min ) + '-' + round( max ) + ')', TEXT_X, TEXT_Y );
+
+			// prm1
+			context.fillStyle = bg;
+			context.globalAlpha = 1;
+			context.fillRect( 0, 48*PR, WIDTH, GRAPH_Y );
+			context.fillStyle = fg;
+			context.fillText(  name1 + ' (' + prm1  + ')', TEXT_X, TEXT_Y + 48*PR );
+			// prm2
+			context.fillStyle = bg;
+			context.globalAlpha = 1;
+			context.fillRect( 0, (48 + 15)*PR, WIDTH, GRAPH_Y );
+			context.fillStyle = fg;
+			context.fillText(  name2 + ' (' +  prm2  + ')', TEXT_X, TEXT_Y + (48 + 15)*PR );
+			// prm3
+			context.fillStyle = bg;
+			context.globalAlpha = 1;
+			context.fillRect( 0, (48 + 2*15)*PR, WIDTH, GRAPH_Y );
+			context.fillStyle = fg;
+			context.fillText(  name3 + ' (' +  prm3  + ')', TEXT_X, TEXT_Y + (48 + 2*15)*PR );
+			// prm4
+			context.fillStyle = bg;
+			context.globalAlpha = 1;
+			context.fillRect( 0, (48 + 3*15)*PR, WIDTH, GRAPH_Y );
+			context.fillStyle = fg;
+			context.fillText(  name4 + ' (' +  prm4  + ')', TEXT_X, TEXT_Y + (48 + 3*15)*PR );
 
 			context.drawImage( canvas, GRAPH_X + PR, GRAPH_Y, GRAPH_WIDTH - PR, GRAPH_HEIGHT, GRAPH_X, GRAPH_Y, GRAPH_WIDTH - PR, GRAPH_HEIGHT );
 
