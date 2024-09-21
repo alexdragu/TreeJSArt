@@ -14,7 +14,7 @@
 	<body>
 		<canvas class="webgl"></canvas>
 
-		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a>  BL Map Version v0.92<br/>
+		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a>  BL Map Version v0.921<br/>
 		<b>O</b> orthographic <b>P</b> perspective <b>H</b> hide title <b>
 		</div>
 
@@ -283,7 +283,7 @@ function getObjectString(entry) {
 			let cameraPerspectiveHelper, cameraOrthoHelper;
 
 			let effectController;
-			const frustumSize = 1800;
+			let frustumSize = 200;
 
 			// required for GUI
 			let tess = - 1;	// force initialization
@@ -406,7 +406,8 @@ function getObjectString(entry) {
 				//cameraRig.add( mesh3 );
 
 				lbMap = new LbMap(scene, mesh, R,2*Math.PI/5.0,2*Math.PI/5.0,100,100,1,1,1.0,1.0, Math.PI, Math.PI);
-				lbMap.setScrSize(-0.5 * frustumSize * aspect * scrrapmap, frustumSize*scrrapmap );
+				lbMap.setScrSize(-0.5 * frustumSize * aspect * scrrapmap, 
+				frustumSize*scrrapmap );
 				lbMap.init();	
 								
 				lbMap.factory();
@@ -458,6 +459,50 @@ function getObjectString(entry) {
 
 			}
 			
+			function mapscr (){
+				lbMap.setScrSize(-0.5 * frustumSize * aspect * effectController.scrrapmap, 
+				frustumSize*effectController.scrrapmap );
+				scrrapmap = effectController.scrrapmap;
+			}
+
+			function remap(){
+
+				frustumSize = effectController.frustumSize;
+				//lbMap = new LbMap(scene, mesh, R,2*Math.PI/5.0,2*Math.PI/5.0,100,100,1,1,1.0,1.0, Math.PI, Math.PI);
+				
+				//lbMap.setScrSize(-0.5 * frustumSize * aspect * scrrapmap, 
+				//frustumSize*scrrapmap );
+				//lbMap.init();									
+				//lbMap.factory();
+
+				cameraRig.remove(cameraOrtho);
+
+				cameraOrtho = new THREE.OrthographicCamera
+				( hrap * frustumSize * aspect / - 2, 
+				hrap *  frustumSize * aspect / 2, 
+				frustumSize / 2, 
+				frustumSize / - 2, 
+				150, 1000 );
+
+				scene.remove( cameraOrthoHelper );
+				cameraOrthoHelper = new THREE.CameraHelper( cameraOrtho );
+				
+				scene.add( cameraOrthoHelper );
+			//
+				activeCamera = cameraOrtho;
+				activeHelper = cameraOrthoHelper;
+
+				// counteract different front orientation of cameras vs rig
+				cameraOrtho.rotation.y = Math.PI;
+
+				cameraRig.add(cameraOrtho);
+
+				//lbMap.ReGenerateMap(false);
+			
+			}
+
+
+
 			function pullRemoteObject (objId){
 				getObjectString(objId).then(mapRawData => {
 					console.log("Country : " + mapRawData.name);	
@@ -477,11 +522,13 @@ function getObjectString(entry) {
 			function setupGui() {
 
 				effectController = {
+					frustumSize: frustumSize,
 					newTess: 15,
 					autofit: lbMap.autofit,
 					friends: 30,
 					proximity: 20,
 					refriend: true,
+					scrrapmap: scrrapmap,
 					newShading: 'glossy',
 					show_camhelper: show_camhelper,
 
@@ -514,14 +561,16 @@ function getObjectString(entry) {
 
 				const gui = new GUI();
 				gui.domElement.setAttribute("id","bluecontrol");
+				gui.add( effectController, 'frustumSize' ).name( 'Frustum' ).onChange( remap );
+				gui.add( effectController, 'scrrapmap', 0, 2.0 ).name('Screen Rap').step( 0.1 ).listen().onChange( mapscr );
 
-				gui.add( effectController, 'newTess', [ 2, 3, 4, 5, 6, 8, 10, 15, 20, 30, 40, 50 ] ).name( 'Tessellation Level' ).onChange( render );
+//				gui.add( effectController, 'newTess', [ 2, 3, 4, 5, 6, 8, 10, 15, 20, 30, 40, 50 ] ).name( 'Tessellation Level' ).onChange( render );
 				gui.add( effectController, 'move_map' ).name( 'Move P S' ).onChange( render );
 				gui.add( effectController, 'autofit' ).name( 'autofit' ).onChange( render );
 				gui.add( effectController, 'friends' ).name( 'friends' ).onChange( render );
 				gui.add( effectController, 'proximity' ).name( 'proximity' ).onChange( render );
 				gui.add( effectController, 'refriend' ).name( 'refriend' ).onChange( render );
-				gui.add( effectController, 'newShading', [ 'wireframe', 'flat', 'smooth', 'glossy', 'textured', 'reflective' ] ).name( 'Shading' ).onChange( render );
+				//gui.add( effectController, 'newShading', [ 'wireframe', 'flat', 'smooth', 'glossy', 'textured', 'reflective' ] ).name( 'Shading' ).onChange( render );
 
 				gui.add( effectController, 'show_camhelper' ).name( 'Cam Helper' ).onChange( render );
 
@@ -537,6 +586,8 @@ function getObjectString(entry) {
 				gui.add( effectController, 'rotate_squares' ).name( 'Rotate Squares' ).onChange( render );
 
 				gui.add( effectController, 'go_auto' ).name( 'Auto Move' ).onChange( render );
+				 
+
 
 				gui.add( effectController, 'winSizeW', 1, 2*R ).name('Window Size X').step( 1 ).listen().onChange( render );
 				gui.add( effectController, 'winSizeH', 1, 2*R ).name('Window Size y').step( 1 ).listen().onChange( render );
@@ -742,6 +793,7 @@ function getObjectString(entry) {
 
 				render();
 
+				if(lbMap.activeMapCoords.length > lbMap.show_friend_idx)
 				stats.update(
 					lbMap.mapCoords.length, 
 					lbMap.activeMapCoords.length,
