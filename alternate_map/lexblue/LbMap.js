@@ -861,8 +861,8 @@ class LbMap {
 			}
 
 			// dirsx is a global target spot
-			dirsx = this.mapCoords[j].spotx + 80;
-			dirsy = this.mapCoords[j].spoty + 80;
+			dirsx = this.mapCoords[j].spotx + 10;// + 80;
+			dirsy = this.mapCoords[j].spoty + 10;// + 80;
 
 			//console.log("sx: " + sx + " sy: " + sy + " " + this.mapCoords[j].sx + " " + this.mapCoords[j].sy + " " +  " "  + this.mapCoords[j].spotx + " " + this.mapCoords[j].spoty	);
 
@@ -879,11 +879,12 @@ class LbMap {
 				diry = 0.0;
 				amp = 0.0;
 			}else{			
-				//dirx = (sx - dirx) ;/// amp;		VL
-				//diry = (sy - diry) ;/// amp;      VL
+				dirx = (sx - dirx) ;/// amp;		VL
+				diry = (sy - diry) ;/// amp;      VL
 
-				dirx = (sx - dirx) / amp;
-				diry = (sy - diry) / amp;
+				// OV
+				//dirx = (sx - dirx) / amp;
+				//diry = (sy - diry) / amp;
 			}
 			
 			let amp1 = Math.sqrt((sx-dirsx)*(sx-dirsx) + (sy-dirsy)*(sy-dirsy))
@@ -897,12 +898,12 @@ class LbMap {
 			}
 
 //amp1 = 0;
-dirsx = 0;
-dirsy = 0;
+//dirsx = 0;
+//dirsy = 0;
 
 // Temperate the imact of sport forced position
-//dirsx/=200;
-//dirsy/=200;
+//dirsx/=10;
+//dirsy/=10;
 //amp = 0;
 
 //dirx = 0.0;
@@ -925,23 +926,27 @@ dirsy = 0;
 			//speed = -1000 * timeBetweenCalls*(new_speed);
 			//new_speed = amp;
 			
-			//speed =  -timeBetweenCalls ;/// (new_speed);  // VL
+			speed =  -timeBetweenCalls ;/// (new_speed);  // VL
+
 			//speed -= 0.2* timeBetweenCalls*(new_speed);
 			//speed = -1000* timeBetweenCalls*(new_speed);  // this is ok
-			speed = 400*(-1+Math.sin(this.mapCoords[j].type)/2.0)*timeBetweenCalls*(new_speed);  // this is ok
-			
+
+			// OV
+			//speed = 400*(-1+Math.sin(this.mapCoords[j].type)/2.0)*timeBetweenCalls*(new_speed);  // this is ok
 
 			//console.log("normd: " + normd + "dx " + dirx + "dy " + diry + "dsx " + dirsx + "dsy " + dirsy);
 //			if (normd==0.0) normd = 1.0;
-
+			
+			//OV, VL
 			dispx = this.mapCoords[j].directionx * speed ;
 			dispy = this.mapCoords[j].directiony * speed ;					
 
-			//this.mapCoords[j].directionx = (dirx+dirsx) ;/// new_direction vector; // VL
-			//this.mapCoords[j].directiony = (diry+dirsy) ;/// new_direction vector;  // VL
+			this.mapCoords[j].directionx = (dirx+dirsx) ;/// new_direction vector; // VL
+			this.mapCoords[j].directiony = (diry+dirsy) ;/// new_direction vector;  // VL
 
-			this.mapCoords[j].directionx = (dirx+dirsx) / new_speed;  
-			this.mapCoords[j].directiony = (diry+dirsy) / new_speed;  
+			// OV
+			//this.mapCoords[j].directionx = (dirx+dirsx) / new_speed;  
+			//this.mapCoords[j].directiony = (diry+dirsy) / new_speed;  
 
 			//console.log("Aspeedx: " + speedx + " speedy: " + speedy + " " +  speed + " dx" + this.mapCoords[j].directionx + " dy" + this.mapCoords[j].directiony	);
 			
@@ -949,8 +954,9 @@ dirsy = 0;
 			sx = sx + dispx ;// VL //*Math.sin((this.totalelapsed/100.0)) + sx%30*speedx*Math.cos(sx/j%20.0)/6 ;
 			sy = sy + dispy ;// VL //*Math.sin(sy/(2*j%10.0) +(this.totalelapsed/170.0)) + sy%30*speedx*Math.cos(sy/j%20.0)/6;
 			
-			sx = sx + dispx * timeBetweenCalls;
-			sy = sy + dispy * timeBetweenCalls;
+			// OV
+			//sx = sx + dispx * timeBetweenCalls;
+			//sy = sy + dispy * timeBetweenCalls;
 			
 			sz = positionAttribute.getZ(_index);
 
