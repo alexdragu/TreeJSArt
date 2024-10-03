@@ -341,10 +341,12 @@ class LbMap {
 	 * 	 */
 	regenerateSphereMap(regen){
 		// clean-up
-		for (var n = 0;n<this.square_list.length;n++){											
+		for (var n = 0;n<this.square_list.length;n++){
+
 			this.square_list[n].geometry.dispose();
 			this.square_surface_list[n].geometry.dispose();				
-			this.square_flat_list[n].geometry.dispose();			
+			this.square_flat_list[n].geometry.dispose();
+
 			this.square_group.remove(this.square_list[n]);						
 			this.square_surface_group.remove(this.square_surface_list[n]);									
 			this.square_flat_group.remove(this.square_flat_list[n]);
@@ -357,6 +359,7 @@ class LbMap {
 
 		if (this.hide_squares){
 			this.scene.remove(this.square_flat_group);
+			//this.scene.remove(this.square_surface_group);
 		}
 
 		this.object.remove(this.square_group);
@@ -365,8 +368,10 @@ class LbMap {
 
 		//this.scene.add(this.square_surface_group);
 
-		if (!this.hide_squares)		
+		if (!this.hide_squares)	{	
 			this.scene.add(this.square_flat_group);
+			//this.scene.add(this.square_surface_group);
+		}
 	}
 	
 	get particles (){
@@ -1553,6 +1558,7 @@ class LbMap {
 		// build the geometry of the squares
 		for (var n = 0;n<this.square_list.length;n++){								
 			square_group.add(this.square_list[n]);
+
 			this.square_surface_group.add(this.square_surface_list[n]);	
 
 			this.square_flat_group.add(this.square_flat_list[n]);			
