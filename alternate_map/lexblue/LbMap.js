@@ -82,6 +82,7 @@ class LbMap {
 	square_group;
 	square_surface_group;
 	square_flat_group;
+	square_flat_surface_group;
 	radius_group;
 
 	friends_group; // not used
@@ -89,6 +90,8 @@ class LbMap {
 
 	square_list = [];
 	square_flat_list = [];	
+	square_flat_surface_list = [];	
+	
 	square_surface_list = [];
 	map_lines_list = [];
 	friends_line_list = [];
@@ -238,6 +241,7 @@ class LbMap {
 
 		this.square_surface_group = new THREE.Group();
 		this.square_flat_group = new THREE.Group();
+		this.square_flat_surface_group = new THREE.Group();
 		
 	}
 
@@ -346,19 +350,25 @@ class LbMap {
 			this.square_list[n].geometry.dispose();
 			this.square_surface_list[n].geometry.dispose();				
 			this.square_flat_list[n].geometry.dispose();
+			this.square_flat_surface_list[n].geometry.dispose();
 
 			this.square_group.remove(this.square_list[n]);						
 			this.square_surface_group.remove(this.square_surface_list[n]);									
 			this.square_flat_group.remove(this.square_flat_list[n]);
+			this.square_flat_surface_group.remove(this.square_flat_surface_list[n]);
 		}
 
 		this.square_list = [];
 		this.square_surface_list = [];
 		this.square_flat_list = [];
+		this.square_flat_surface_list = [];
+
 		this.map_lines_list = [];
+		
 
 		if (this.hide_squares){
 			this.scene.remove(this.square_flat_group);
+			this.scene.remove(this.square_flat_surface_group);			
 			//this.scene.remove(this.square_surface_group);
 		}
 
@@ -370,6 +380,7 @@ class LbMap {
 
 		if (!this.hide_squares)	{	
 			this.scene.add(this.square_flat_group);
+			this.scene.add(this.square_flat_surface_group);			
 			//this.scene.add(this.square_surface_group);
 		}
 	}
@@ -1166,6 +1177,7 @@ class LbMap {
 		for (var n = 0;n<this.square_list.length;n++){
 			// there are 5 points per square
 			const positionAttributeSquare = this.square_flat_list[n].geometry.getAttribute( 'position' );
+			const positionAttributeSquareSurface = this.square_flat_surface_list[n].geometry.getAttribute( 'position' );
 
 			const planePoints = [];
 			for (let i = 0; i < 5; i++) {
@@ -1222,12 +1234,16 @@ class LbMap {
 
 				// Move it on display
 				const fpoint = this.toScreenPosition(point, kx, ky);
+				const fpoint_surf = this.toScreenPosition(point, kx, ky);
 
 				positionAttributeSquare.setXYZ(i, fpoint.x, fpoint.y, fpoint.z);
+				positionAttributeSquareSurface.setXYZ(i, fpoint_surf.x, fpoint_surf.y, fpoint_surf.z);
+				
 			}
 
 			positionAttributeSquare.needsUpdate = true;
-
+			positionAttributeSquareSurface.needsUpdate = true;
+			
 			for ( var j = 0; j < this.mapCoords.length; j++ ) {					
 
 //>>>>>>>>>>>>>> move this on direct loading
@@ -1520,12 +1536,16 @@ class LbMap {
 
 
 		let geometry_surface = new THREE.BufferGeometry();
+		let geometry_flat_surface = new THREE.BufferGeometry();
 
 		let vertices = [];
 		let indices = [];
+
+		let vertices_flat_surface = [];
 		// Add the points as vertices
 		for (let i = 0; i < points.length - 1; i++) {
 			vertices.push(points[i].x, points[i].y, points[i].z);
+			vertices_flat_surface.push(points[i].x, points[i].y, points[i].z);
 		}
 		// Define the vertices that make up each of the two triangles
 		indices.push(0, 1, 2); // First triangle
@@ -1533,13 +1553,22 @@ class LbMap {
 		
 		geometry_surface.setIndex(indices);
 		geometry_surface.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+
+		geometry_flat_surface.setIndex(indices);
+		geometry_flat_surface.setAttribute('position', new THREE.Float32BufferAttribute(vertices_flat_surface, 3));
 		
 		let material_surface = new THREE.MeshBasicMaterial({ color: 0xffaaff, side: THREE.DoubleSide });
+		let material_flat_surface = new THREE.MeshBasicMaterial({ color: 0x111822, side: THREE.BackSide });
+	
 		let mesh = new THREE.Mesh(geometry_surface, material_surface);
+		
+		// mesh and mesh_flat_surface are equal but they need to be cloned
+		let mesh_flat_surface = new THREE.Mesh(geometry_flat_surface, material_flat_surface);
 
 		this.square_list.push(line);
 		this.square_flat_list.push(line_flat);
 		this.square_surface_list.push(mesh);
+		this.square_flat_surface_list.push(mesh_flat_surface);
 	}
 
 	// build the squeares for wach window to be projected on the sphere
@@ -1561,10 +1590,13 @@ class LbMap {
 
 			this.square_surface_group.add(this.square_surface_list[n]);	
 
-			this.square_flat_group.add(this.square_flat_list[n]);			
+			this.square_flat_group.add(this.square_flat_list[n]);		
+			this.square_flat_surface_group.add(this.square_flat_surface_list[n]);					
+			
 		}
 
 		this.square_flat_group.position.z = 250;
+		this.square_flat_surface_group.position.z = 360;
 		return square_group;
 	}
 	
