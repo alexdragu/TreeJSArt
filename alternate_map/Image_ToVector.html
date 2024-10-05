@@ -1,0 +1,89 @@
+<html>
+    <head>
+
+    </head>
+
+    <body>
+<script src="https://www.marvinj.org/releases/marvinj-0.9.js"></script>
+<script type="module" id="vertexshader">
+    document.getElementById('butVectorize').addEventListener('click', () => { click();});
+    document.getElementById('butDownload').addEventListener('click', () => { download('poly.txt','Polystring content');});
+
+    var canvasA = document.getElementById("canvasA");
+    var canvasB = document.getElementById("canvasB");
+    var canvasC = document.getElementById("canvasC");
+    var original = new MarvinImage();
+
+    original.load("https://i.imgur.com/WmgZ7z0.jpg", function(){
+    // Draw the original image 
+    original.draw(canvasA);
+    
+    // create a new image with the same dimension
+    var image = new MarvinImage(original.getWidth(), original.getHeight());
+    grayscale(original, image);
+    image.draw(canvasB);
+    
+    thresholding(original, image, 100);
+    image.draw(canvasC);
+    });
+
+    function grayscale(imageIn, imageOut){
+        for(var y=0; y<imageIn.getHeight(); y++){
+            for(var x=0; x<imageIn.getWidth(); x++){
+                var red		= imageIn.getIntComponent0(x,y);
+                var green	= imageIn.getIntComponent1(x,y);
+                var blue	= imageIn.getIntComponent2(x,y);
+                var gray = Math.floor(red*0.21+green*0.71+blue*0.08);
+                
+                imageOut.setIntColor(x, y, gray, gray, gray);
+            }
+        } 
+    }
+
+    function thresholding(imageIn, imageOut, threshold){
+    // Convert image to gray scale before thresholding
+    grayscale(imageIn, imageOut);
+    for(var y=0; y<imageOut.getHeight(); y++){
+        for(var x=0; x<imageOut.getWidth(); x++){
+            var gray = imageOut.getIntComponent0(x,y);
+            
+            if( gray < threshold){
+                imageOut.setIntColor(x,y, 0xFF000000);
+            } else{
+                imageOut.setIntColor(x,y, 0xFFFFFFFF);
+            }
+        }
+    }
+    }
+
+    function click(){
+        alert('Click!');
+    }
+
+    function download(filename, text) {
+        var element = document.createElement('a');
+        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+        element.setAttribute('download', filename);
+
+        element.style.display = 'none';
+        document.body.appendChild(element);
+
+        element.click();
+
+        document.body.removeChild(element);
+    }
+
+</script>
+
+        <img src="textures/sprites/ball.png" id="srcImage" alt="Image to convert" width="500" height="600"/>
+        <div>
+        <button type="button" id="butVectorize">Vectorize!</button>
+        <button type="button" id="butDownload">Download!</button>
+        </div>
+        <div style="display:flex;">
+            <canvas id="canvasA" width="400" height="400"></canvas><br/>
+            <canvas id="canvasB" width="400" height="400" style="display:inline-block"></canvas>
+            <canvas id="canvasC" width="400" height="400" style="display:inline-block"></canvas>
+        </div>
+    </body>
+</html>

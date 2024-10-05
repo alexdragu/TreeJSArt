@@ -31,7 +31,7 @@ fs.createReadStream("./ne_110m_admin_0_sovereignty.csv")
   });
   
 app.get('/', (req, res) => {
-  res.send('Hello from App Engine XYZ!');
+  res.send('Map reader Service!');
 });
 
 app.get('/get_count', (req, res) => {

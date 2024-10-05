@@ -14,7 +14,7 @@
 	<body>
 		<canvas class="webgl"></canvas>
 
-		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a>  BL Map Version v0.923<br/>
+		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a>  BL Map Version v0.93<br/>
 		<b>O</b> orthographic <b>P</b> perspective <b>H</b> hide title <b>
 		</div>
 
@@ -100,8 +100,40 @@
 
 
 			}
+		</script>
+
+		<script type="x-shader/x-vertex" id="vertexshader_canvas">
+			varying vec2 vUv;
+			varying vec3 vColor;
+
+			void main() {
+				vColor = color;
+				vUv = uv;
+								
+				gl_Position =   projectionMatrix * modelViewMatrix * vec4(position,1.0);
+			}
 
 		</script>
+
+		<script type="x-shader/x-fragment" id="fragmentshader_canvas">
+
+			uniform sampler2D pointTexture;
+
+			varying vec3 vColor;
+			varying vec2 vUv;
+
+			void main() {
+				gl_FragColor = vec4( vColor*0.5, 0.8 ) ;
+
+				gl_FragColor = gl_FragColor * texture2D( pointTexture, vUv );
+
+			}
+
+		</script>
+
+
+
+
 
 		<script type="x-shader/x-vertex" id="vertexshader_surface">
 			
@@ -500,8 +532,6 @@ function getObjectString(entry) {
 				//lbMap.ReGenerateMap(false);
 			
 			}
-
-
 
 			function pullRemoteObject (objId){
 				getObjectString(objId).then(mapRawData => {

@@ -112,6 +112,7 @@ class LbMap {
 	// rendering extras
 	uniforms;
 	shaderMaterial;
+	shaderMaterialCanvas;
 
 	pointsMap = [];
 	geometryMap = new THREE.BufferGeometry();
@@ -227,6 +228,19 @@ class LbMap {
 			uniforms: this.uniforms,
 			vertexShader: document.getElementById( 'vertexshader' ).textContent,
 			fragmentShader: document.getElementById( 'fragmentshader' ).textContent,
+
+			blending: THREE.AdditiveBlending,
+			depthTest: false,
+			transparent: true,
+			vertexColors: true
+
+		} );
+
+		this.shaderMaterialCanvas = new THREE.ShaderMaterial( {
+
+			uniforms: this.uniforms,
+			vertexShader: document.getElementById( 'vertexshader_canvas' ).textContent,
+			fragmentShader: document.getElementById( 'fragmentshader_canvas' ).textContent,
 
 			blending: THREE.AdditiveBlending,
 			depthTest: false,
@@ -1540,6 +1554,8 @@ class LbMap {
 
 		let vertices = [];
 		let indices = [];
+		let indices_canvas = [];
+		let uv = [];
 
 		let vertices_flat_surface = [];
 		// Add the points as vertices
@@ -1547,23 +1563,30 @@ class LbMap {
 			vertices.push(points[i].x, points[i].y, points[i].z);
 			vertices_flat_surface.push(points[i].x, points[i].y, points[i].z);
 		}
+		uv.push(1,1); uv.push(1,-1); uv.push(0,1); uv.push(0,-1);
 		// Define the vertices that make up each of the two triangles
 		indices.push(0, 1, 2); // First triangle
 		indices.push(0, 2, 3); // Second triangle
 		
+		indices_canvas.push(0, 2, 1); // First triangle
+		indices_canvas.push(0, 3, 2); // Second triangle
+
 		geometry_surface.setIndex(indices);
 		geometry_surface.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
 
-		geometry_flat_surface.setIndex(indices);
+		geometry_flat_surface.setIndex(indices_canvas);
 		geometry_flat_surface.setAttribute('position', new THREE.Float32BufferAttribute(vertices_flat_surface, 3));
+		geometry_flat_surface.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
 		
 		let material_surface = new THREE.MeshBasicMaterial({ color: 0xffaaff, side: THREE.DoubleSide });
-		let material_flat_surface = new THREE.MeshBasicMaterial({ color: 0x111822, side: THREE.BackSide });
+		let material_flat_surface = new THREE.MeshBasicMaterial({ color: 0x111822, side: THREE.FrontSide });
 	
 		let mesh = new THREE.Mesh(geometry_surface, material_surface);
 		
 		// mesh and mesh_flat_surface are equal but they need to be cloned
-		let mesh_flat_surface = new THREE.Mesh(geometry_flat_surface, material_flat_surface);
+		//let mesh_flat_surface = new THREE.Mesh(geometry_flat_surface, material_flat_surface);
+
+		let mesh_flat_surface = new THREE.Mesh(geometry_flat_surface, this.shaderMaterialCanvas);
 
 		this.square_list.push(line);
 		this.square_flat_list.push(line_flat);
@@ -1596,7 +1619,7 @@ class LbMap {
 		}
 
 		this.square_flat_group.position.z = 250;
-		this.square_flat_surface_group.position.z = 360;
+		this.square_flat_surface_group.position.z = 300;
 		return square_group;
 	}
 	
