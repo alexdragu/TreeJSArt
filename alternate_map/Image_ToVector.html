@@ -6,25 +6,28 @@
     <body>
 <script src="https://www.marvinj.org/releases/marvinj-0.9.js"></script>
 <script type="module" id="vertexshader">
-    document.getElementById('butVectorize').addEventListener('click', () => { click();});
-    document.getElementById('butDownload').addEventListener('click', () => { download('poly.txt','Polystring content');});
+    document.getElementById('butVectorize').addEventListener('click', () => { vectorize_click();});
+    document.getElementById('butDownload').addEventListener('click', () => { download('poly.txt','Pilot astro', original);});
 
     var canvasA = document.getElementById("canvasA");
     var canvasB = document.getElementById("canvasB");
     var canvasC = document.getElementById("canvasC");
     var original = new MarvinImage();
 
+    var threshold = document.getElementById("txtThreshold").value;
+    var step = document.getElementById("txtStep").value;
+
     original.load("https://i.imgur.com/WmgZ7z0.jpg", function(){
     // Draw the original image 
-    original.draw(canvasA);
-    
-    // create a new image with the same dimension
-    var image = new MarvinImage(original.getWidth(), original.getHeight());
-    grayscale(original, image);
-    image.draw(canvasB);
-    
-    thresholding(original, image, 100);
-    image.draw(canvasC);
+        original.draw(canvasA);
+        
+        // create a new image with the same dimension
+        var image = new MarvinImage(original.getWidth(), original.getHeight());
+        grayscale(original, image);
+        image.draw(canvasB);
+        
+        thresholding(original, image, 100);
+        image.draw(canvasC);
     });
 
     function grayscale(imageIn, imageOut){
@@ -42,43 +45,124 @@
 
     function thresholding(imageIn, imageOut, threshold){
     // Convert image to gray scale before thresholding
-    grayscale(imageIn, imageOut);
-    for(var y=0; y<imageOut.getHeight(); y++){
-        for(var x=0; x<imageOut.getWidth(); x++){
-            var gray = imageOut.getIntComponent0(x,y);
-            
-            if( gray < threshold){
-                imageOut.setIntColor(x,y, 0xFF000000);
-            } else{
-                imageOut.setIntColor(x,y, 0xFFFFFFFF);
+        grayscale(imageIn, imageOut);
+        for(var y=0; y<imageOut.getHeight(); y++){
+            for(var x=0; x<imageOut.getWidth(); x++){
+                var gray = imageOut.getIntComponent0(x,y);
+                
+                if( gray < threshold){
+                    imageOut.setIntColor(x,y, 0xFF000000);
+                } else{
+                    imageOut.setIntColor(x,y, 0xFFFFFFFF);
+                }
             }
         }
     }
+
+    function vectorize_click(){
+        step = document.getElementById("txtStep").value;
+        var image = new MarvinImage(original.getWidth()/step, original.getHeight()/step);
+        vectorize (original,image);
+        image.draw(canvasB);
     }
 
-    function click(){
-        alert('Click!');
+    function vectorize(imageIn, imageOut){
+        var first = true;
+        //var threshold = 120;
+        var approved = false;
+        
+        threshold = document.getElementById("txtThreshold").value;
+        step = document.getElementById("txtStep").value;
+
+        for(var y=0; y<imageIn.getHeight()/step; y++){
+            for(var x=0; x<imageIn.getWidth()/step; x++){
+                approved = false;
+
+                var red		= imageIn.getIntComponent0(x*step,y*step);
+                var green	= imageIn.getIntComponent1(x*step,y*step);
+                var blue	= imageIn.getIntComponent2(x*step,y*step);
+            
+                // here it is the efvaluation.
+                // to be extended in obtaining multiple polynoms
+                if(red < threshold && green < threshold && blue < threshold){
+                    approved = true;
+                }
+
+                if (approved){
+                    imageOut.setIntColor(x,y, 0xFF000000);
+                }else{
+                    imageOut.setIntColor(x,y, 0xFFFFAAFF);
+                }
+            }
+        } 
     }
 
-    function download(filename, text) {
+    function download(filename, imageName, imageIn) {
         var element = document.createElement('a');
-        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
-        element.setAttribute('download', filename);
 
+        var image_content = '';
+        step = document.getElementById("txtStep").value;
+
+        var image = new MarvinImage(original.getWidth()/step, original.getHeight()/step);
+
+        vectorize (original,image);
+        image.draw(canvasB);
+
+        image_content += imageName + ',';
+        image_content += '\"POLYGON ((';
+        
+        var first = true;
+        var threshold = 120;
+        var approved = false;
+            
+        for(var y=0; y<image.getHeight(); y++){
+            for(var x=0; x<image.getWidth(); x++){
+                approved = false;
+
+                var red		= image.getIntComponent0(x,y);
+                var green	= image.getIntComponent1(x,y);
+                var blue	= image.getIntComponent2(x,y);
+            
+                // here it is the efvaluation.
+                // to be extended in obtaining multiple polynoms
+                if(red < threshold && green < threshold && blue < threshold){
+                    approved = true;
+                }
+
+                if (approved){
+                    if (!first){ 
+                        image_content += ",";
+                    }else{
+                        first = false;                        
+                    }                    
+                    image_content +=  x + " " + y ;
+                }
+
+            }
+        } 
+
+        image_content += '))\"';
+
+        //element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(image_content));
+        element.setAttribute('download', filename);
         element.style.display = 'none';
         document.body.appendChild(element);
-
         element.click();
-
         document.body.removeChild(element);
     }
 
 </script>
 
         <img src="textures/sprites/ball.png" id="srcImage" alt="Image to convert" width="500" height="600"/>
-        <div>
+        <div>Threshold :
+        <input type="text" id="txtThreshold" value="80"><br>
+        Step:
+        <input type="text" id="txtStep" value="40"><br>
+
         <button type="button" id="butVectorize">Vectorize!</button>
         <button type="button" id="butDownload">Download!</button>
+        <br>
         </div>
         <div style="display:flex;">
             <canvas id="canvasA" width="400" height="400"></canvas><br/>

@@ -14,7 +14,7 @@
 	<body>
 		<canvas class="webgl"></canvas>
 
-		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a>  BL Map Version v0.93<br/>
+		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a>  BL Map Version v0.94<br/>
 		<b>O</b> orthographic <b>P</b> perspective <b>H</b> hide title <b>
 		</div>
 
@@ -282,8 +282,45 @@ function getObjectsCount() {
 		});
 }
 
+function getObjectsCountFlat() {
+	const url = `http://${window.location.hostname}:8082/get_flat_count`;
+
+	return fetch(url)
+		.then(response => response.json())
+		.then(data => {
+			// Handle the response data here
+			console.log("Count thing :" +data + " " + data.countx) ;
+			return data.countx;
+		})
+		.catch(error => {
+			// Handle any errors that occurred during the request
+			console.error(error);
+		});
+}
+
 function getObjectString(entry) {
     const url = `http://${window.location.hostname}:8082/get_entry?obj_entry=${entry}`;
+
+    return fetch(url)
+        .then(response => response.text())  // Get the response as text
+        .then(text => {
+            //console.log('Raw response:', text);  // Log the raw response
+
+            if (text) {  // If the response is not empty
+                const data = JSON.parse(text);  // Parse the text as JSON
+				return data;
+            } else {
+                console.log('Empty response');
+            }
+        })
+        .catch(error => {
+            console.error(error);
+        });
+}
+
+
+function getFlatObjectString(entry) {
+    const url = `http://${window.location.hostname}:8082/get_flat_entry?obj_entry=${entry}`;
 
     return fetch(url)
         .then(response => response.text())  // Get the response as text
@@ -362,6 +399,7 @@ function getObjectString(entry) {
 			let lastRenderTime;
 			let mapRawData;
 			let objCount = 0;
+			let objCountFlat = 0;
 
 			let countries = [];
 			var hrap = 1.0;
@@ -449,6 +487,10 @@ function getObjectString(entry) {
 					objCount = count;
 				});
 
+				getObjectsCountFlat().then(count => {
+					console.log("Count Async: " + count);
+					objCountFlat = count;
+				});
 				//mapRawData = getObjectString(9); // this is Argentina
 				// 153 antarctica
 				// 9 argentina
@@ -535,13 +577,31 @@ function getObjectString(entry) {
 
 			function pullRemoteObject (objId){
 				getObjectString(objId).then(mapRawData => {
-					console.log("Country : " + mapRawData.name);	
+					console.log("Country : " + mapRawData.name);
+					console.log("Obj coords : " + mapRawData.coordinates);							
 					const nameExists = countries.some(country => country.name === mapRawData.name);
 
 					if (!nameExists) {
-						countries.push({ name: mapRawData.name, data: mapRawData.coordinates });
+						countries.push({ name: mapRawData.name, data: mapRawData.coordinates, mapmode: 0 });
 
-						lbMap.initMapData(mapRawData.coordinates);
+						lbMap.initMapData(mapRawData.coordinates, 0);
+						lbMap.ReGenerateMap(true);
+
+						//cameraRig.add( lbMap.particlesMap );
+					}
+				});
+			}
+
+			function pullRemoteObjectFlat (objId){
+				getFlatObjectString(objId).then(mapRawData => {
+					console.log("Obj name : " + mapRawData.name);
+					console.log("Obj coords : " + mapRawData.coordinates);	
+					const nameExists = countries.some(country => country.name === mapRawData.name);
+
+					if (!nameExists) {
+						countries.push({ name: mapRawData.name, data: mapRawData.coordinates , mapmode: 1});
+
+						lbMap.initMapData(mapRawData.coordinates, 1);
 						lbMap.ReGenerateMap(true);
 
 						//cameraRig.add( lbMap.particlesMap );
@@ -757,20 +817,11 @@ function getObjectString(entry) {
 						lbMap.updateMapCoords();	
 
 						lbMap.ReGenerateMap(false);
-					break;
+						break;
 					case 88: /*X*/
-						// Add your code here for key Xw						
-						//lbMap.friend_mode++;
-						//lbMap.friend_mode%=4;
-						if (lbMap.friend_mode==2) {
-							lbMap.friend_mode = 4;
-						}else{
-							lbMap.friend_mode = 2;
-						}
-
-						lbMap.setFriends(6);	
-						console.log("Friends mode: " + lbMap.friend_mode);
-						//lbMap.ReGenerateMap(true);
+						const objIdFlat = Math.floor(Math.random() * objCountFlat);
+						console.log("Random Object " + objIdFlat + " of : " + objCountFlat);
+						pullRemoteObjectFlat (objIdFlat);
 						break;
 					case 67: /*C*/
 						lbMap.delaunyInitialized = false;

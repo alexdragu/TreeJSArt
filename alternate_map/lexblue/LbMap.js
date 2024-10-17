@@ -13,14 +13,31 @@ import * as THREE from 'three';
 //let mapCoordsRaw = [[1,1.4],[2,1.4],[2,0.4],[1,0.4]];
 //let R,Vstep, Hstep, window_w, window_h, winxcnt ,winycnt ,fact ,mag;
 
+
+//-----------------------------------------
+// add mode flat sphere
+// if flat set fi/theta as 0 and keep x,y, z=0
+// modes 0 - sphere
+// mode 1 - flat
 class MapCoord {
-	constructor(fi, theta, R){
+	constructor(fi, theta, R, mode = 0){
 		this.fi = fi;
 		this.theta = theta;
+		this.mode = mode;
+		// sphere coordinates
+		if (mode == 0) {
+			this.x = R * Math.cos(theta) * Math.cos(fi);
+			this.y = R * Math.cos(theta) * Math.sin(fi);
+			this.z = R * Math.sin(theta);
+		}
 
-		this.x = R * Math.cos(theta) * Math.cos(fi);
-		this.y = R * Math.cos(theta) * Math.sin(fi);
-		this.z = R * Math.sin(theta);
+		if (mode == 1){
+			this.fi = 0;
+			this.theta = 0;
+			this.x = -fi * 200.0 + 85;
+			this.y = -theta * 200.0 + 85;
+			this.z = R*0.8;
+		}
 
 		this.spotx = this.x;
 		this.spoty = this.y;
@@ -181,11 +198,13 @@ class LbMap {
 		this.out_scr_w = w;
 	}
 	
-	parsePolygonCoords(polygonString) {
+	parsePolygonCoords(polygonString, mode) {
 		// Remove the "POLYGON " prefix and split the string into polygons
 		//prefix may be POLYGON or MultyPolygon
 		
 		const firstParenthesisPosition = polygonString.indexOf('(');
+		console.log ("Polygon type: " + mode);
+
 		console.log (firstParenthesisPosition);
 		const polygons = polygonString.slice(firstParenthesisPosition+1).split('), (');
 		// Map each polygon string to an array of MapCoords objects
@@ -205,8 +224,8 @@ class LbMap {
 				const sanitizedCoordString = lastCharacter === ')' ? trimmedCoordString.slice(0, -1) : trimmedCoordString;
 				
 				const [x, y] = sanitizedCoordString.trim().split(' ').map(Number);
-
-				var mapCoord = new MapCoord( x*(Math.PI)/180.0, y*(Math.PI)/(180.0), this.R);
+				console.log("x:" + x +" y:" + y);
+				var mapCoord = new MapCoord( x*(Math.PI)/180.0, y*(Math.PI)/(180.0), this.R, mode);
 				return mapCoord;
 			});
 		});
@@ -272,8 +291,8 @@ class LbMap {
 	
 	}
 
-	initMapData(mapdata) {		
-		const tmparraymaps = this.parsePolygonCoords(mapdata);
+	initMapData(mapdata, mode = 0) {		
+		const tmparraymaps = this.parsePolygonCoords(mapdata, mode);
 		const newMapCoords = tmparraymaps.flat();
 		
 		const deepCopyTmpArrayMaps = JSON.parse(JSON.stringify(tmparraymaps));
@@ -891,8 +910,8 @@ class LbMap {
 			}
 
 			// dirsx is a global target spot
-			dirsx = this.mapCoords[j].spotx + 10;// + 80;
-			dirsy = this.mapCoords[j].spoty + 10;// + 80;
+			dirsx = this.mapCoords[j].spotx + 0;// + 80;
+			dirsy = this.mapCoords[j].spoty + 0;// + 80;
 
 			//console.log("sx: " + sx + " sy: " + sy + " " + this.mapCoords[j].sx + " " + this.mapCoords[j].sy + " " +  " "  + this.mapCoords[j].spotx + " " + this.mapCoords[j].spoty	);
 
@@ -1014,7 +1033,6 @@ class LbMap {
 			//colorAttr.setXYZ( _index,  this.color.r, this.color.g, this.color.b  );
 			}
 			
-
 			//console.log(_index +" " + this.totalelapsed + " " );
 
 			// fragment part			
@@ -1158,15 +1176,12 @@ class LbMap {
 		let sizesAttr;
 		let colorAttr;
 		let regen = regen_;
-		if (!regen){
-			
+
+		if (!regen){			
 			positionAttribute = this.particlesMap.geometry.getAttribute( 'position' );
 			// need to get right_friend and size
 			right_friendAttr0 = this.particlesMap.geometry.getAttribute( 'right_friend0' );
 			right_friendAttr1 = this.particlesMap.geometry.getAttribute( 'right_friend1' );
-//			right_friendAttr2 = this.particlesMap.geometry.getAttribute( 'right_friend2' );
-//			right_friendAttr3 = this.particlesMap.geometry.getAttribute( 'right_friend3' );
-//			right_friendAttr4 = this.particlesMap.geometry.getAttribute( 'right_friend4' );
 
 			sizesAttr = this.particlesMap.geometry.getAttribute( 'size' );
 			colorAttr = this.particlesMap.geometry.getAttribute( 'color' );			
@@ -1177,7 +1192,6 @@ class LbMap {
 		this.right_friend2 = [];
 		this.right_friend3 = [];
 		this.right_friend4 = [];
-
 
 		this.colors = [];
 		this.sizes = [];
@@ -1211,6 +1225,7 @@ class LbMap {
 			let point0 = new THREE.Vector3(planePoints[0].x, planePoints[0].y, planePoints[0].z);
 			let point1 = new THREE.Vector3(planePoints[1].x, planePoints[1].y, planePoints[1].z);
 			let point2 = new THREE.Vector3(planePoints[2].x, planePoints[2].y, planePoints[2].z);
+			
 			this.square_surface_list[n].worldToLocal(point0);
 			point0.applyQuaternion(q_inverse); // Apply quaternion to each point
 
@@ -1225,7 +1240,6 @@ class LbMap {
 			let ky = this.defIndexh + Math.floor(n/this.prjMapData.y);
 			let kx = this.defIndexv + n%this.prjMapData.y;
 			
-
 			const centerX = (point0.x + point2.x) / 2;
 			const centerY = (point0.y + point2.y) / 2;
 
@@ -1260,26 +1274,11 @@ class LbMap {
 			
 			for ( var j = 0; j < this.mapCoords.length; j++ ) {					
 
-//>>>>>>>>>>>>>> move this on direct loading
-//>>>>>>>>>>>>>> projects here also the lines for the multipolygon map even if partial
-
-				//var _x = this.R * Math.cos(this.mapCoords[j].theta) * Math.cos(this.mapCoords[j].fi);
-				//var _y = this.R * Math.cos(this.mapCoords[j].theta) * Math.sin(this.mapCoords[j].fi);
-				//var _z = this.R * Math.sin(this.mapCoords[j].theta);
-
 				var _x = this.mapCoords[j].x;
 				var _y = this.mapCoords[j].y;
 				var _z = this.mapCoords[j].z;
 
-				//console.log ("x: " + _x + " y: " + _y + " z: " + _z + " " + this.mapCoords[j].fi + " " + this.mapCoords[j].theta );
-				//console.log ("ix: " + this.mapCoords[j].x + " iy: " + this.mapCoords[j].y + " iz: " + this.mapCoords[j].z + " " + this.mapCoords[j].fi + " " + this.mapCoords[j].theta );
-
-				//this.mapCoords[j].x = x;
-				//this.mapCoords[j].y = y;
-				//this.mapCoords[j].z = z;
-
 				const vec2 = new THREE.Vector3(_x,_y,_z);
-				//const vec = new THREE.Vector3(this.mapCoords[j].x,this.mapCoords[j].y,this.mapCoords[j].z);
 
 				// go for the intersection
 				let raycaster = new THREE.Raycaster();
@@ -1292,37 +1291,42 @@ class LbMap {
 
 				let intersects = raycaster.intersectObject(this.square_surface_list[n]);
 
-				//this.mapCoords[j].speed = Math.sin((this.mapCoords[j].fi+this.mapCoords[j].theta)/2.0);
-	
 				this.mapCoords[j].directionx = 0.0;
 				this.mapCoords[j].directiony = 0.0;
 				this.mapCoords[j].directionz = 0.0;
-				//this.setFriends(this.friend_mode);	
 
-				if (intersects.length <= 0) {
+				if ((intersects.length <= 0) && (this.mapCoords[j].mode == 0)){
 
 				} else {
-					
-					let intersectionPoint = intersects[0].point;
-					
-					this.square_surface_list[n].worldToLocal(intersectionPoint);
-					intersectionPoint.applyQuaternion(q_inverse);
-					const vec1 = new THREE.Vector3();
-					vec1.x = intersectionPoint.x;
-					vec1.y = intersectionPoint.y;
-					vec1.z = intersectionPoint.z;					
-							
-					let point = vec1;
-					// Rotate the points around the center of the square to make it horizontal
-					const rotatedX = (point.x - centerX) * Math.cos(angle) - (point.y - centerY) * Math.sin(angle) + centerX;
-					const rotatedY = (point.x - centerX) * Math.sin(angle) + (point.y - centerY) * Math.cos(angle) + centerY;
+					let vdest;
+					if (this.mapCoords[j].mode == 0) {
+						let intersectionPoint = intersects[0].point;
+						
+						this.square_surface_list[n].worldToLocal(intersectionPoint);
+						intersectionPoint.applyQuaternion(q_inverse);
 
-					if (this.rotate_squares){
-						point.x = rotatedX ;
-						point.y = rotatedY ;
-					}
+						const vec1 = new THREE.Vector3();
+						vec1.x = intersectionPoint.x;
+						vec1.y = intersectionPoint.y;
+						vec1.z = intersectionPoint.z;					
+								
+						let point = vec1;
+						// Rotate the points around the center of the square to make it horizontal
+						const rotatedX = (point.x - centerX) * Math.cos(angle) - (point.y - centerY) * Math.sin(angle) + centerX;
+						const rotatedY = (point.x - centerX) * Math.sin(angle) + (point.y - centerY) * Math.cos(angle) + centerY;
+
+						if (this.rotate_squares){
+							point.x = rotatedX ;
+							point.y = rotatedY ;
+						}
 					
-					const vdest = this.toScreenPosition(point, kx, ky);
+						vdest = this.toScreenPosition(point, kx, ky);
+					}else{
+					// if it a flat map point go for direct coordinates
+					// to do : obsolete all calculations for projection
+					//if (this.mapCoords[j].mode == 1)
+						vdest = new THREE.Vector3(this.mapCoords[j].x,this.mapCoords[j].y,-100); 
+					}
 
 					// final data for particle system after projection
 					this.mapCoords[j].spotx = vdest.x;
@@ -1345,16 +1349,12 @@ class LbMap {
 							//colorAttr.setXYZ( vindex,  0.9, 0.1, 0.1  );
 							right_friendAttr0.setXYZ( vindex, this.rfcolor.r,kx, ky );
 							right_friendAttr1.setXYZ( vindex, Math.sin(vdest.x*Math.PI/this.prjMapData.square_size_x)*0.4,Math.cos(Math.PI*vdest.y*0.5/this.prjMapData.square_size_y), 0 );
-						//	right_friendAttr2.setXYZ( vindex, this.rfcolor.r,kx, ky );
-						//	right_friendAttr3.setXYZ( vindex, this.rfcolor.r,kx, ky );
-						//	right_friendAttr4.setXYZ( vindex, this.rfcolor.r,kx, ky );
+
 						}else{
 							colorAttr.setXYZ( vindex,  0.1, 0.1, 0.9  );
 							right_friendAttr0.setXYZ( vindex, this.rfcolor.r,kx, ky );
 							right_friendAttr1.setXYZ( vindex, Math.sin(vdest.x*Math.PI/this.prjMapData.square_size_x)*0.4,Math.cos(Math.PI*vdest.y*0.5/this.prjMapData.square_size_y), 0 );
-							//right_friendAttr2.setXYZ(vindex,0,0,0);
-							//right_friendAttr3.setXYZ(vindex,0,0,0);
-							//right_friendAttr4.setXYZ(vindex,0,0,0);
+
 						}
 
 						let vcolor = 40;
@@ -1624,7 +1624,7 @@ class LbMap {
 	}
 	
 
-	loadRandomMap1(){
+	loadRandomMapFlat(){
 		// add another 1000 particles on the sphere
 		for ( let i = 0; i < 100; i ++ ) {					
 			var fi = THREE.MathUtils.randFloatSpread( Math.PI);
