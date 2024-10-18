@@ -36,7 +36,9 @@ fs.createReadStream("./ne_110m_admin_0_sovereignty.csv")
 
   console.log('Loading flat images...');
 
-fs.createReadStream("./images.csv")
+fs.createReadStream("./images_robocop.csv")
+//fs.createReadStream("./robocop_big.csv")
+//fs.createReadStream("./robocop_div2.csv")
 .pipe(parse({ delimiter: ",", from_line: 1 }))
 .on("data", function (row) {
     //console.log(row[3] + " : " + row.length +  row[168]); // print the cell from column 214

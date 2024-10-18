@@ -34,6 +34,10 @@ class MapCoord {
 		if (mode == 1){
 			this.fi = 0;
 			this.theta = 0;
+			// robot_div2
+			//this.x = -fi * 80.0 + 70;
+			//this.y = -theta * 80.0 + 70;
+
 			this.x = -fi * 200.0 + 85;
 			this.y = -theta * 200.0 + 85;
 			this.z = R*0.8;
@@ -238,13 +242,21 @@ class LbMap {
 		console.log(this.mapCoords);
 		console.log(this.defIndexv);
 
-		this.uniforms = {
+		this.uniforms1 = {
 			pointTexture: { value: new THREE.TextureLoader().load( 'textures/sprites/spark1.png' ) }
 		};
 
+		this.uniforms = {
+			pointTexture: { value: new THREE.TextureLoader().load( 'textures/sprites/snowflake3.png' ) }
+		};		
+
+		this.uniforms_paper = {
+			pointTexture: { value: new THREE.TextureLoader().load( 'textures/paper.jpg' ) }
+		};	
+
 		this.shaderMaterial = new THREE.ShaderMaterial( {
 
-			uniforms: this.uniforms,
+			uniforms: this.uniforms1,
 			vertexShader: document.getElementById( 'vertexshader' ).textContent,
 			fragmentShader: document.getElementById( 'fragmentshader' ).textContent,
 
@@ -257,7 +269,7 @@ class LbMap {
 
 		this.shaderMaterialCanvas = new THREE.ShaderMaterial( {
 
-			uniforms: this.uniforms,
+			uniforms: this.uniforms_paper,
 			vertexShader: document.getElementById( 'vertexshader_canvas' ).textContent,
 			fragmentShader: document.getElementById( 'fragmentshader_canvas' ).textContent,
 
@@ -474,7 +486,15 @@ class LbMap {
 	}
 
 
-	setFriends(fcount,i,tolerance) {
+	setFriends(fcount,i,tolerance){
+
+		for ( var k = i; k < this.activeMapCoords.length; k++ ) {
+			this.setFriends_(fcount,k,tolerance);
+		}
+
+	}
+
+	setFriends_(fcount,i,tolerance) {
 		var fmin = 10000;
 
 		var f_int_min = 0;
@@ -595,8 +615,8 @@ class LbMap {
 			//this.displayFriendsDistanceFrom(i);
 		}
 
-		if (i+1<this.activeMapCoords.length)
-			this.setFriends(fcount,i+1,tolerance);			
+		//if (i+1<this.activeMapCoords.length)
+		//	this.setFriends(fcount,i+1,tolerance);			
 	}
 
 	safe_push_friend(i,idx,fcount){
@@ -923,17 +943,25 @@ class LbMap {
 //			console.log("amp: " + amp + " " + sx + " " + sy + " " + dirx + " " + diry);
 			//amp = 1;			
 
+			// we define a segment and quantize smallest vector
+			const segment = 1;
 			if ((isNaN(amp)) || (amp == 0.0)) {
 				dirx = 0.0;
 				diry = 0.0;
 				amp = 0.0;
 			}else{			
-				dirx = (sx - dirx) ;/// amp;		VL
-				diry = (sy - diry) ;/// amp;      VL
+				dirx = (sx - dirx) ;;/// amp;		VL
+				diry = (sy - diry) ;;/// amp;      VL
 
 				// OV
 				//dirx = (sx - dirx) / amp;
 				//diry = (sy - diry) / amp;
+
+			// quantum state jump 
+				// VL1
+				//if (Math.abs(dirx) < segment) dirx = -Math.sign(dirx)*segment/2.0;
+				//if (Math.abs(diry) < segment) diry = -Math.sign(diry)*segment/2.0;	
+
 			}
 			
 			let amp1 = Math.sqrt((sx-dirsx)*(sx-dirsx) + (sy-dirsy)*(sy-dirsy))
@@ -942,13 +970,18 @@ class LbMap {
 				dirsy = 0.0;
 				amp1 = 0.0;
 			}else{			
-				dirsx = (sx - dirsx) ;/// amp1;
-				dirsy = (sy - dirsy) ;/// amp1;
+				dirsx = (sx - dirsx) ;
+				dirsy = (sy - dirsy) ;
+
+				// quantum state jump 
+				// VL1
+				//if (Math.abs(dirsx) < segment) dirsx = -Math.sign(dirsx)*segment/2.0;
+				//if (Math.abs(dirsy) < segment) dirsy = -Math.sign(dirsy)*segment/2.0;
 			}
 
 //amp1 = 0;
-//dirsx = 0;
-//dirsy = 0;
+dirsx = 0;
+dirsy = 0;
 
 // Temperate the imact of sport forced position
 //dirsx/=10;
@@ -975,7 +1008,10 @@ class LbMap {
 			//speed = -1000 * timeBetweenCalls*(new_speed);
 			//new_speed = amp;
 			
-			speed =  -timeBetweenCalls ;/// (new_speed);  // VL
+			speed =  -40*timeBetweenCalls/(new_speed) ;/// (new_speed);  // VL
+//no			//speed -=  0.001*timeBetweenCalls/(new_speed) ;/// (new_speed);  // VL
+
+//			speed =  -timeBetweenCalls ;/// (new_speed);  // VL
 
 			//speed -= 0.2* timeBetweenCalls*(new_speed);
 			//speed = -1000* timeBetweenCalls*(new_speed);  // this is ok

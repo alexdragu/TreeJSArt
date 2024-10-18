@@ -14,7 +14,7 @@
 	<body>
 		<canvas class="webgl"></canvas>
 
-		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a>  BL Map Version v0.94<br/>
+		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a>  BL Map Version v0.95<br/>
 		<b>O</b> orthographic <b>P</b> perspective <b>H</b> hide title <b>
 		</div>
 
@@ -961,9 +961,6 @@ if (go_auto){
 				lbMap.ReGenerateMap(false);
 }
 
-
-				
-
 				const r = 0;
 
 				if (effectController.hide_squares != lbMap.hide_squares ||					
@@ -1054,11 +1051,6 @@ if (go_auto){
 
 					//lbMap.updateMap();
 					//lbMap.updateWindows();
-
-					//console.log("Updated");
-					//console.log(effectController);
-					//console.log(lbMap.prjMapData);
-
 				}
 				//lbMap.moveParticleSystemOnSphereSpace(timeBetweenRenders/5600, 6);
 
@@ -1068,17 +1060,9 @@ if (go_auto){
 					effectController.proximity, 
 					effectController.refriend);
 				}
-
-/*
-				if (effectController.move_map){
-					lbMap.moveParticleSystem(timeBetweenRenders/(5*60),
-					30,
-					20);
-				}
-*/			
+		
 				//lbMap.delaunatorMap();
 				//lbMap.generateFriendsLines();
-
 
 				if (show_camhelper != effectController.show_camhelper){
 					show_camhelper = effectController.show_camhelper;
