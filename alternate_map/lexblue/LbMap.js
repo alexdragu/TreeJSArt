@@ -247,7 +247,7 @@ class LbMap {
 		};
 
 		this.uniforms = {
-			pointTexture: { value: new THREE.TextureLoader().load( 'textures/sprites/snowflake3.png' ) }
+			pointTexture: { value: new THREE.TextureLoader().load( 'textures/sprites/disc.png' ) }
 		};		
 
 		this.uniforms_paper = {
@@ -256,7 +256,7 @@ class LbMap {
 
 		this.shaderMaterial = new THREE.ShaderMaterial( {
 
-			uniforms: this.uniforms1,
+			uniforms: this.uniforms,
 			vertexShader: document.getElementById( 'vertexshader' ).textContent,
 			fragmentShader: document.getElementById( 'fragmentshader' ).textContent,
 
@@ -845,6 +845,7 @@ class LbMap {
 		let positionAttribute;
 		let right_friendAttr0;
 		let right_friendAttr1;
+		let right_friendAttr2;
 
 		let sizesAttr;
 		let colorAttr;
@@ -870,6 +871,7 @@ class LbMap {
 		colorAttr = this.particlesMap.geometry.getAttribute( 'color' );	
 		right_friendAttr0 = this.particlesMap.geometry.getAttribute( 'right_friend0' );
 		right_friendAttr1 = this.particlesMap.geometry.getAttribute( 'right_friend1' );
+		right_friendAttr2 = this.particlesMap.geometry.getAttribute( 'right_friend2' );
 
 		const vindex = this.particlesMap.geometry.drawRange;
 
@@ -980,8 +982,8 @@ class LbMap {
 			}
 
 //amp1 = 0;
-//dirsx = 0;
-//dirsy = 0;
+dirsx = 0;
+dirsy = 0;
 
 // Temperate the imact of sport forced position
 //dirsx/=10;
@@ -1008,10 +1010,10 @@ class LbMap {
 			//speed = -1000 * timeBetweenCalls*(new_speed);
 			//new_speed = amp;
 			
-//			speed =  -40*timeBetweenCalls/(new_speed) ;/// (new_speed);  // VL - plasma implosion
+			speed =  -40*timeBetweenCalls/(new_speed) ;/// (new_speed);  // VL - plasma implosion
 //no			//speed -=  0.001*timeBetweenCalls/(new_speed) ;/// (new_speed);  // VL
 
-			speed =  -timeBetweenCalls ;/// (new_speed);  // VL
+//			speed =  -timeBetweenCalls ;/// (new_speed);  // VL
 
 			//speed -= 0.2* timeBetweenCalls*(new_speed);
 			//speed = -1000* timeBetweenCalls*(new_speed);  // this is ok
@@ -1056,6 +1058,7 @@ class LbMap {
 			// debug coloring	- very ugly		
 			if (this.mapCoords[j].type == 1000){
 				colorAttr.setXYZ( _index,  1.0, 0.1, 0.1  );
+				
 			}else{
 
 				if (this.mapCoords[j].type == 1001){
@@ -1075,6 +1078,7 @@ class LbMap {
 			//colorAttr.setXYZ( _index,  this.color.r, this.color.g, this.color.b  );
 			right_friendAttr0.setXYZ( _index, this.rfcolor.r,kx, ky );
 			right_friendAttr1.setXYZ( _index, 4*Math.sin(sx*Math.PI/this.prjMapData.square_size_x)/20.0,4*Math.cos(Math.PI*sy*0.5/this.prjMapData.square_size_y)/12.0, 0 );
+			right_friendAttr2.setXYZ( _index%2, (_index+1)%2, 0 );
 
 		});
 
@@ -1085,6 +1089,7 @@ class LbMap {
 		colorAttr.needsUpdate = true;
 		right_friendAttr0.needsUpdate = true;
 		right_friendAttr1.needsUpdate = true;
+		right_friendAttr2.needsUpdate = true;
 	}
 
 	delaunyInitialized = false;
@@ -1208,6 +1213,7 @@ class LbMap {
 		let positionAttribute;
 		let right_friendAttr0;
 		let right_friendAttr1;
+		let right_friendAttr2;
 
 		let sizesAttr;
 		let colorAttr;
@@ -1218,6 +1224,7 @@ class LbMap {
 			// need to get right_friend and size
 			right_friendAttr0 = this.particlesMap.geometry.getAttribute( 'right_friend0' );
 			right_friendAttr1 = this.particlesMap.geometry.getAttribute( 'right_friend1' );
+			right_friendAttr2 = this.particlesMap.geometry.getAttribute( 'right_friend2' );
 
 			sizesAttr = this.particlesMap.geometry.getAttribute( 'size' );
 			colorAttr = this.particlesMap.geometry.getAttribute( 'color' );			
@@ -1392,6 +1399,7 @@ class LbMap {
 							right_friendAttr1.setXYZ( vindex, Math.sin(vdest.x*Math.PI/this.prjMapData.square_size_x)*0.4,Math.cos(Math.PI*vdest.y*0.5/this.prjMapData.square_size_y), 0 );
 
 						}
+						right_friendAttr2.setXYZ( vindex%2, (vindex+1)%2, 0 );
 
 						let vcolor = 40;
 						let x = (vindex+n)%(2*vcolor);
@@ -1407,7 +1415,7 @@ class LbMap {
 					}else{
 						this.right_friend0.push( this.rfcolor.r,kx, ky );
 						this.right_friend1.push( Math.sin(vdest.x*Math.PI/this.prjMapData.square_size_x)*0.4,Math.cos(Math.PI*vdest.y*0.5/this.prjMapData.square_size_y), 0 );
-						this.right_friend2.push( this.rfcolor.r,kx, ky );
+						this.right_friend2.push( j%2,(j+1)%2,0 );
 						this.right_friend3.push( this.rfcolor.r,kx, ky );
 						this.right_friend4.push( this.rfcolor.r,kx, ky );
 
@@ -1457,6 +1465,7 @@ class LbMap {
 
 			right_friendAttr0.needsUpdate = true; 
 			right_friendAttr1.needsUpdate = true; 
+			right_friendAttr2.needsUpdate = true; 
 			//right_friendAttr2.needsUpdate = true; 
 			//right_friendAttr3.needsUpdate = true; 
 			//right_friendAttr4.needsUpdate = true; 

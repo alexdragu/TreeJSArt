@@ -64,8 +64,9 @@
 				//gl_PointSize = 1.0 * size * ( 300.0 / -mvPosition.z );
 				// increase the size of the points
 				//gl_PointSize = 1.0 * size *(1.0 + 1.0 * vRightFriend1.x* vRightFriend1.y/50.0);//* ( 300.0 / -mvPosition.z );
-				gl_PointSize = 2.0 * size *(2.0 + 1.0 * vRightFriend1.x* vRightFriend1.y/20.0);//* ( 300.0 / -mvPosition.z );
-
+				//gl_PointSize = 2.0 * size *(2.0 + 1.0 * vRightFriend1.x* vRightFriend1.y/20.0);//* ( 300.0 / -mvPosition.z );
+				gl_PointSize = 0.3 * size *(2.0 + 1.0 * vRightFriend1.x* vRightFriend1.y/20.0);//* ( 300.0 / -mvPosition.z );
+				//gl_PointSize = gl_PointSize*200.0	;
 				//gl_Position = projectionMatrix * mvPosition;
 				//gl_Position = projectionMatrix * (mvPosition + 1.8*vec4(vRightFriend1,0.0));
 				gl_Position = projectionMatrix * (mvPosition);				
@@ -85,10 +86,26 @@
 			varying vec3 vRightFriend3;
 			varying vec3 vRightFriend4;
 
+
 			void main() {
 
-				gl_FragColor = vec4( vColor*0.5, 0.8 ) ;//+ vec4(vRightFriend0*0.5, 0.1);
-				gl_FragColor = gl_FragColor * texture2D( pointTexture, gl_PointCoord );
+				//gl_FragColor = vec4( vColor*0.5, 1.0) ;//+ vec4(vRightFriend0*0.5, 0.1);
+				//gl_FragColor = gl_FragColor * texture2D( pointTexture, gl_PointCoord );
+
+				//gl_FragColor = texture2D( pointTexture, gl_PointCoord );
+				
+				vec2 uv = gl_PointCoord;
+/*
+				uv.x = uv.x*vRightFriend2.x + 0.5 *vRightFriend2.y  ;
+				uv.y = uv.y*vRightFriend2.y + 0.5 *vRightFriend2.x  ;
+				
+				uv.x *= 30.0*vRightFriend2.x + uv.x *vRightFriend2.y;
+				uv.y *= 30.0*vRightFriend2.y + uv.x *vRightFriend2.x;
+*/
+
+				gl_FragColor = texture2D( pointTexture, uv );
+				
+
 				//gl_FragColor = vec4( vColor*0.5, 0.5 ) + texture2D( pointTexture, gl_PointCoord );
 				//gl_FragColor = texture2D( pointTexture, gl_PointCoord );
 				//gl_FragColor = gl_FragColor * (1.0-texture2D( pointTexture, gl_PointCoord )) * 1.0/(gl_PointCoord.y * gl_PointCoord.y);
