@@ -247,7 +247,7 @@ class LbMap {
 		};
 
 		this.uniforms = {
-			pointTexture: { value: new THREE.TextureLoader().load( 'textures/sprites/disc.png' ) }
+			pointTexture: { value: new THREE.TextureLoader().load( 'textures/sprites/ball.png' ) }
 		};		
 
 		this.uniforms_paper = {
@@ -932,8 +932,8 @@ class LbMap {
 			}
 
 			// dirsx is a global target spot
-			dirsx = this.mapCoords[j].spotx + 0;// + 80;
-			dirsy = this.mapCoords[j].spoty + 0;// + 80;
+			dirsx = this.mapCoords[j].spotx + 10 + j*3%5;// + 80;
+			dirsy = this.mapCoords[j].spoty + 10 + j*3%5;// + 80;
 
 			//console.log("sx: " + sx + " sy: " + sy + " " + this.mapCoords[j].sx + " " + this.mapCoords[j].sy + " " +  " "  + this.mapCoords[j].spotx + " " + this.mapCoords[j].spoty	);
 
@@ -1010,8 +1010,8 @@ dirsy = 0;
 			//speed = -1000 * timeBetweenCalls*(new_speed);
 			//new_speed = amp;
 			
-			speed =  -40*timeBetweenCalls/(new_speed) ;/// (new_speed);  // VL - plasma implosion
-//no			//speed -=  0.001*timeBetweenCalls/(new_speed) ;/// (new_speed);  // VL
+//			speed =  -40*timeBetweenCalls/(new_speed) ;/// (new_speed);  // VL - plasma implosion
+			speed = -240*timeBetweenCalls*timeBetweenCalls*timeBetweenCalls ;/// (new_speed);  // VL
 
 //			speed =  -timeBetweenCalls ;/// (new_speed);  // VL
 
@@ -1023,13 +1023,14 @@ dirsy = 0;
 
 			//console.log("normd: " + normd + "dx " + dirx + "dy " + diry + "dsx " + dirsx + "dsy " + dirsy);
 //			if (normd==0.0) normd = 1.0;
-			
+
 			//OV, VL
 			dispx = this.mapCoords[j].directionx * speed ;
-			dispy = this.mapCoords[j].directiony * speed ;					
+			dispy = this.mapCoords[j].directiony * speed ;
 
 			this.mapCoords[j].directionx = (dirx+dirsx) ;/// new_direction vector; // VL
 			this.mapCoords[j].directiony = (diry+dirsy) ;/// new_direction vector;  // VL
+
 
 			// OV
 			//this.mapCoords[j].directionx = (dirx+dirsx) / new_speed;  

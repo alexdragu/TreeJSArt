@@ -17,7 +17,10 @@
     var threshold = document.getElementById("txtThreshold").value;
     var step = document.getElementById("txtStep").value;
 
-    original.load("https://i.imgur.com/WmgZ7z0.jpg", function(){
+//    original.load("https://i.imgur.com/WmgZ7z0.jpg", function(){
+
+    original.load("textures/monalisa.jpg", function(){
+//            textures/sprites/ball.png
     // Draw the original image 
         original.draw(canvasA);
         
@@ -154,7 +157,7 @@
 
 </script>
 
-        <img src="textures/sprites/ball.png" id="srcImage" alt="Image to convert" width="500" height="600"/>
+        <img src="textures/monalisa.jpg" id="srcImage" alt="Image to convert" width="500" height="600"/>
         <div>Threshold :
         <input type="text" id="txtThreshold" value="80"><br>
         Step:

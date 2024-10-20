@@ -36,7 +36,9 @@ fs.createReadStream("./ne_110m_admin_0_sovereignty.csv")
 
   console.log('Loading flat images...');
 
-fs.createReadStream("./images_robocop.csv")
+//fs.createReadStream("./images_robocop.csv")
+fs.createReadStream("./monalisa.csv")
+
 //fs.createReadStream("./robocop_big.csv")
 //fs.createReadStream("./robocop_div2.csv")
 .pipe(parse({ delimiter: ",", from_line: 1 }))
