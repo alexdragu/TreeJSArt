@@ -251,7 +251,7 @@ class LbMap {
 		};		
 
 		this.uniforms_paper = {
-			pointTexture: { value: new THREE.TextureLoader().load( 'textures/paper.jpg' ) }
+			pointTexture: { value: new THREE.TextureLoader().load( 'textures/paper_black.jpg' ) }
 		};	
 
 		this.shaderMaterial = new THREE.ShaderMaterial( {
@@ -980,8 +980,8 @@ class LbMap {
 			}
 
 //amp1 = 0;
-dirsx = 0;
-dirsy = 0;
+//dirsx = 0;
+//dirsy = 0;
 
 // Temperate the imact of sport forced position
 //dirsx/=10;
@@ -1008,10 +1008,10 @@ dirsy = 0;
 			//speed = -1000 * timeBetweenCalls*(new_speed);
 			//new_speed = amp;
 			
-			speed =  -40*timeBetweenCalls/(new_speed) ;/// (new_speed);  // VL
+//			speed =  -40*timeBetweenCalls/(new_speed) ;/// (new_speed);  // VL - plasma implosion
 //no			//speed -=  0.001*timeBetweenCalls/(new_speed) ;/// (new_speed);  // VL
 
-//			speed =  -timeBetweenCalls ;/// (new_speed);  // VL
+			speed =  -timeBetweenCalls ;/// (new_speed);  // VL
 
 			//speed -= 0.2* timeBetweenCalls*(new_speed);
 			//speed = -1000* timeBetweenCalls*(new_speed);  // this is ok
