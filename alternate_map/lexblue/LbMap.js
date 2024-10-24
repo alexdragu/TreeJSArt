@@ -982,8 +982,8 @@ class LbMap {
 			}
 
 //amp1 = 0;
-dirsx = 0;
-dirsy = 0;
+//dirsx = 0;
+//dirsy = 0;
 
 // Temperate the imact of sport forced position
 //dirsx/=10;
