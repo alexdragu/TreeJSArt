@@ -4,10 +4,12 @@
     </head>
 
     <body>
-<script src="https://www.marvinj.org/releases/marvinj-0.9.js"></script>
-<script type="module" id="vertexshader">
+    <script src="https://www.marvinj.org/releases/marvinj-0.9.js"></script>
+    <script type="module" id="vertexshader">
+    
     document.getElementById('butVectorize').addEventListener('click', () => { vectorize_click();});
     document.getElementById('butDownload').addEventListener('click', () => { download('poly.txt','Pilot astro', original);});
+    document.getElementById('butUpload').addEventListener('click', () => { loadCustomImage();});
 
     var canvasA = document.getElementById("canvasA");
     var canvasB = document.getElementById("canvasB");
@@ -15,14 +17,18 @@
     var original = new MarvinImage();
 
     var threshold = document.getElementById("txtThreshold").value;
-    var step = document.getElementById("txtStep").value;
+    var out_width = document.getElementById("txtOutwidth").value;
+    var step = 1;
+    var currentFileName = "textures/monalisa.jpg";
 
-//    original.load("https://i.imgur.com/WmgZ7z0.jpg", function(){
-
-    original.load("textures/monalisa.jpg", function(){
-//            textures/sprites/ball.png
+    original.load(currentFileName , function(){
     // Draw the original image 
+        
+        //canvasA.width = original.getWidth();
+        //canvasA.height = original.getHeight();
+
         original.draw(canvasA);
+        //ctx.drawImage(original, (c.width / 2) - (original.width / 2), 0, original.width, original.height);
         
         // create a new image with the same dimension
         var image = new MarvinImage(original.getWidth(), original.getHeight());
@@ -63,19 +69,26 @@
     }
 
     function vectorize_click(){
-        step = document.getElementById("txtStep").value;
-        var image = new MarvinImage(original.getWidth()/step, original.getHeight()/step);
-        vectorize (original,image);
+        out_width = document.getElementById("txtOutwidth").value;
+
+        var image = new MarvinImage(400, 400);
+        var rap = out_width / image.getWidth();        
+
+        Marvin.scale(original.clone(), image, out_width, image.getHeight() * rap);
+
+        vectorize (image,image);
+
+        canvasB.getContext("2d").clearRect(0, 0, canvasA.width, canvasA.height);
         image.draw(canvasB);
+
     }
 
     function vectorize(imageIn, imageOut){
         var first = true;
-        //var threshold = 120;
+        
         var approved = false;
         
         threshold = document.getElementById("txtThreshold").value;
-        step = document.getElementById("txtStep").value;
 
         for(var y=0; y<imageIn.getHeight()/step; y++){
             for(var x=0; x<imageIn.getWidth()/step; x++){
@@ -102,15 +115,21 @@
 
     function download(filename, imageName, imageIn) {
         var element = document.createElement('a');
+        
+        // this code identical with the one in vectorize_click
+        out_width = document.getElementById("txtOutwidth").value;
 
-        var image_content = '';
-        step = document.getElementById("txtStep").value;
+        var image = new MarvinImage(400, 400);
+        var rap = out_width / image.getWidth();        
 
-        var image = new MarvinImage(original.getWidth()/step, original.getHeight()/step);
+        Marvin.scale(original.clone(), image, out_width, image.getHeight() * rap);
 
-        vectorize (original,image);
+        vectorize (image,image);
+
+        canvasB.getContext("2d").clearRect(0, 0, canvasA.width, canvasA.height);
         image.draw(canvasB);
 
+        var image_content = '';
         image_content += imageName + ',';
         image_content += '\"POLYGON ((';
         
@@ -155,22 +174,89 @@
         document.body.removeChild(element);
     }
 
+
+    function loadCustomImage(){
+        uploadFile();
+        updateImage();
+    }
+
+    function uploadFile(){
+        var files = document.getElementById('fileToUpload').files;
+        if (!files.length) {
+            alert('Please select a file!');
+            return;
+        }
+        var file = files[0];
+        var formData = new FormData();
+        currentFileName = "textures/" + file.name;
+        formData.append('filetoupload', file, file.name);
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', 'http://localhost:8082/vectorupload', true);
+        xhr.onload = function () {
+            if (xhr.status === 200) {
+                //alert('Uploaded!'); 
+            } else {
+                alert('Upload error!');
+            }
+        };
+        xhr.send(formData);
+    }
+
+    function updateImage(){
+        var image = new MarvinImage();
+        //alert(currentFileName);
+        image.load(currentFileName, function(){
+            original = image;
+
+            var rap = 400 / image.getWidth();
+
+            canvasA.getContext("2d").clearRect(0, 0, canvasA.width, canvasA.height);
+
+            Marvin.scale(image.clone(), image, 400, image.getHeight() * rap);
+            //canvasA.width = original.getWidth();
+            //canvasA.height = original.getHeight();
+            //alert(currentFileName);
+            image.draw(canvasA);
+        });
+    }
+
 </script>
+<!--
+<div id="fileInput">
+    <label for="FileID">
+    <img src="ImageURL"> Select a file :</label>
+    <input type="file" id="FileID"/>
+</div>
+-->
 
-        <img src="textures/monalisa.jpg" id="srcImage" alt="Image to convert" width="500" height="600"/>
+<input type="file" id="fileToUpload" />
+<button type="button" id="butUpload">Upload!</button>
+
+<br />
+<output id="list"></output>
+
         <div>Threshold :
-        <input type="text" id="txtThreshold" value="80"><br>
-        Step:
-        <input type="text" id="txtStep" value="40"><br>
+            <input type="text" id="txtThreshold" value="80"><br>
+            Step:
+            <input type="text" id="txtOutwidth" value="40"><br>
 
-        <button type="button" id="butVectorize">Vectorize!</button>
-        <button type="button" id="butDownload">Download!</button>
-        <br>
+            <button type="button" id="butVectorize">Vectorize!</button>
+            <button type="button" id="butDownload">Download!</button>
+
+            <br>
         </div>
         <div style="display:flex;">
-            <canvas id="canvasA" width="400" height="400"></canvas><br/>
-            <canvas id="canvasB" width="400" height="400" style="display:inline-block"></canvas>
-            <canvas id="canvasC" width="400" height="400" style="display:inline-block"></canvas>
+            <canvas id="canvasA" width="400" height="400" style="display:xinline-block"></canvas>           
+            <canvas id="canvasB" width="400" height="400" style="display:xinline-block"></canvas>
+            <canvas id="canvasC" width="400" height="400" style="display:xinline-block"></canvas>
         </div>
+        
+<!--
+        <form action="http:localhost:8082/vectorupload" method="post"  enctype="multipart/form-data" >
+        <input type="file" name="filetoupload"><br>
+        <input type="submit">'
+        </form>
+-->
+
     </body>
 </html>

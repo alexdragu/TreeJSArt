@@ -7,6 +7,8 @@ app.use(cors());
 const fs = require("fs");
 const { parse } = require("csv-parse");
 
+var formidable = require('formidable');
+
 objData = [];
 objFlatData = [];
 
@@ -37,7 +39,9 @@ fs.createReadStream("./ne_110m_admin_0_sovereignty.csv")
   console.log('Loading flat images...');
 
 //fs.createReadStream("./images_robocop.csv")
-fs.createReadStream("./monalisa.csv")
+//fs.createReadStream("./monalisa.csv")
+//fs.createReadStream("./monalisa_small.txt")
+fs.createReadStream("./monalisa_smaller.txt")
 
 //fs.createReadStream("./robocop_big.csv")
 //fs.createReadStream("./robocop_div2.csv")
@@ -57,6 +61,42 @@ fs.createReadStream("./monalisa.csv")
 
 app.get('/', (req, res) => {
   res.send('Map reader Service!');
+});
+
+app.post('/vectorupload', (req, res) => {
+  var form = new formidable.IncomingForm();
+  form.parse(req, function (err, fields, files) {
+    res.write('File uploaded');
+
+    console.log(fields);
+    console.log(files);
+
+    console.log (files.filetoupload[0]);
+
+    var oldpath = files.filetoupload[0].filepath;
+    //var newpath = 'D:/Temp/vectorimages/' + files.filetoupload[0].originalFilename;
+    var newpath = '../alternate_map/textures/' + files.filetoupload[0].originalFilename;
+
+    console.log(oldpath);
+    console.log(newpath);
+
+    fs.copyFile(oldpath, newpath, function (err) {
+      if (err) throw err;
+      fs.unlinkSync(oldpath);
+      res.write('File uploaded and moved!');
+      res.end();
+    });
+/*
+    fs.rename(oldpath, newpath, function (err) {
+      if (err) throw err;
+      res.write('File uploaded and moved!');
+      res.end();
+    });
+*/  
+  //  res.end();
+  });
+  
+
 });
 
 // get number of sphere coordinates objects
