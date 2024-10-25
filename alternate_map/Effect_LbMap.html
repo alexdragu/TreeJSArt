@@ -65,7 +65,8 @@
 				// increase the size of the points
 				//gl_PointSize = 1.0 * size *(1.0 + 1.0 * vRightFriend1.x* vRightFriend1.y/50.0);//* ( 300.0 / -mvPosition.z );
 				//gl_PointSize = 2.0 * size *(2.0 + 1.0 * vRightFriend1.x* vRightFriend1.y/20.0);//* ( 300.0 / -mvPosition.z );
-				gl_PointSize = 0.3 * size *(2.0 + 1.0 * vRightFriend1.x* vRightFriend1.y/20.0);//* ( 300.0 / -mvPosition.z );
+//				gl_PointSize = 0.3 * size *(2.0 + 1.0 * vRightFriend1.x* vRightFriend1.y/20.0);//* ( 300.0 / -mvPosition.z );
+				gl_PointSize =  20.0f;
 				//gl_PointSize = gl_PointSize*200.0	;
 				//gl_Position = projectionMatrix * mvPosition;
 				//gl_Position = projectionMatrix * (mvPosition + 1.8*vec4(vRightFriend1,0.0));
@@ -592,7 +593,7 @@ function getFlatObjectString(entry) {
 			
 			}
 
-			function pullRemoteObject (objId){
+			function pullRemoteObject (objId, mode = 0){
 				getObjectString(objId).then(mapRawData => {
 					console.log("Country : " + mapRawData.name);
 					console.log("Obj coords : " + mapRawData.coordinates);							
@@ -609,17 +610,23 @@ function getFlatObjectString(entry) {
 				});
 			}
 
-			function pullRemoteObjectFlat (objId){
+			function pullRemoteObjectFlat (objId, tgmode = 0){
 				getFlatObjectString(objId).then(mapRawData => {
 					console.log("Obj name : " + mapRawData.name);
 					console.log("Obj coords : " + mapRawData.coordinates);	
 					const nameExists = countries.some(country => country.name === mapRawData.name);
 
-					if (!nameExists) {
-						countries.push({ name: mapRawData.name, data: mapRawData.coordinates , mapmode: 1});
+					if ((!nameExists) || (tgmode==1)){
 
-						lbMap.initMapData(mapRawData.coordinates, 1);
-						lbMap.ReGenerateMap(true);
+						lbMap.initMapData(mapRawData.coordinates, 1, tgmode);			
+						
+						// only regenerate map if neww contet added to full map
+						if (tgmode == 0){
+							countries.push({ name: mapRawData.name, data: mapRawData.coordinates , mapmode: 1});
+							lbMap.ReGenerateMap(true);
+						}else{
+							console.log("Regenerate!!!!!");
+						}
 
 						//cameraRig.add( lbMap.particlesMap );
 					}
@@ -694,7 +701,6 @@ function getFlatObjectString(entry) {
 
 				gui.add( effectController, 'go_auto' ).name( 'Auto Move' ).onChange( render );
 				 
-
 
 				gui.add( effectController, 'winSizeW', 1, 2*R ).name('Window Size X').step( 1 ).listen().onChange( render );
 				gui.add( effectController, 'winSizeH', 1, 2*R ).name('Window Size y').step( 1 ).listen().onChange( render );
@@ -832,7 +838,6 @@ function getFlatObjectString(entry) {
 						break;
 					case 90: /*Z*/
 						lbMap.updateMapCoords();	
-
 						lbMap.ReGenerateMap(false);
 						break;
 					case 88: /*X*/
@@ -841,9 +846,15 @@ function getFlatObjectString(entry) {
 						pullRemoteObjectFlat (objIdFlat);
 						break;
 					case 67: /*C*/
-						lbMap.delaunyInitialized = false;
+						let objIdFlatT = Math.floor(Math.random() * objCountFlat);
+						console.log("Random Flat Object " + objIdFlatT + " of : " + objCountFlat);
+						//lbMap.delaunyInitialized = false;
+						pullRemoteObjectFlat(objIdFlatT, 1);
 						break;
-
+						// set spiral as target
+					case 86: /*V*/
+						lbMap.updateMapCoords(1);	
+						break;
 				}
 				console.log(event.keyCode);
 

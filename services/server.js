@@ -41,7 +41,7 @@ fs.createReadStream("./ne_110m_admin_0_sovereignty.csv")
 //fs.createReadStream("./images_robocop.csv")
 //fs.createReadStream("./monalisa.csv")
 //fs.createReadStream("./monalisa_small.txt")
-fs.createReadStream("./monalisa_smaller.txt")
+fs.createReadStream("./objects_vector_small.csv")
 
 //fs.createReadStream("./robocop_big.csv")
 //fs.createReadStream("./robocop_div2.csv")
@@ -86,17 +86,9 @@ app.post('/vectorupload', (req, res) => {
       res.write('File uploaded and moved!');
       res.end();
     });
-/*
-    fs.rename(oldpath, newpath, function (err) {
-      if (err) throw err;
-      res.write('File uploaded and moved!');
-      res.end();
-    });
-*/  
-  //  res.end();
+
   });
   
-
 });
 
 // get number of sphere coordinates objects
@@ -123,24 +115,6 @@ app.get('/get_flat_entry', (req, res) => {
   const responseObj = { name: `${objFlatData[objEntry].name}` , coordinates: `${objFlatData[objEntry].coordinates}`};
   res.json(responseObj);
 });
-
-/*
-function parsePolygonCoords(polygonString) {
-  // Extract the coordinates string
-  const coordsString = polygonString.match(/\(([^)]+)\)/)[1];
-
-  // Split the coordinates string into an array of strings
-  const coordsArray = coordsString.split(',');
-
-  // Map each string to a MapCoords object
-  const mapCoordsArray = coordsArray.map(coordString => {
-    const [x, y] = coordString.trim().split(' ').map(Number);
-    return new MapCoords(x, y);
-  });
-
-  return mapCoordsArray;
-}
-*/
 
 // Listen to the App Engine-specified port, or 8080 otherwise
 const PORT = process.env.PORT || 8082;

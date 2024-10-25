@@ -218,7 +218,7 @@ class LbMap {
 			// Split the coordinates string into an array of strings
 			const coordsArray = coordsString.split(',');
 			// Map each string to a MapCoords object
-			console.log ("SplitcoordsArray");
+			//console.log ("SplitcoordsArray");
 			return coordsArray.map(coordString => {
 				
 				const sanitizedCoordStringF = coordString.substring(0,1) === '(' ? coordString.slice(1) : coordString;
@@ -228,7 +228,7 @@ class LbMap {
 				const sanitizedCoordString = lastCharacter === ')' ? trimmedCoordString.slice(0, -1) : trimmedCoordString;
 				
 				const [x, y] = sanitizedCoordString.trim().split(' ').map(Number);
-				console.log("x:" + x +" y:" + y);
+				//console.log("x:" + x +" y:" + y);
 				var mapCoord = new MapCoord( x*(Math.PI)/180.0, y*(Math.PI)/(180.0), this.R, mode);
 				return mapCoord;
 			});
@@ -303,7 +303,8 @@ class LbMap {
 	
 	}
 
-	initMapData(mapdata, mode = 0) {		
+	// target = 0 to add content, 1 to set as position target
+	initMapData(mapdata, mode = 0, target = 0)  {		
 		const tmparraymaps = this.parsePolygonCoords(mapdata, mode);
 		const newMapCoords = tmparraymaps.flat();
 		
@@ -313,9 +314,40 @@ class LbMap {
 			this.arrayOfMaps.push(deepCopyTmpArrayMaps[i].slice());
 		}
 
-		this.mapCoords = this.mapCoords.concat(newMapCoords);
+		// newmaps added , rebuild extras
+		if (target == 0){
+			this.mapCoords = this.mapCoords.concat(newMapCoords);
+			this.rebuildMapData();
+		}
 
-		this.rebuildMapData();
+		// just set target	
+		if (target == 1)
+			this.pushDestMapData(newMapCoords);
+
+	}
+
+
+	// iterate activemap and set mapcoors corespondent target to the loaded one
+	pushDestMapData(newMapCoords){
+
+		this.activeMapCoords.forEach(({ _index, kx, ky, j }, index) => {
+		
+			if (index >= newMapCoords.length ){
+				// shuld eliminate from acctivemapCoords
+				this.activeMapCoords[index].j = 0;
+				return;
+			}
+
+			this.mapCoords[j].spotx = newMapCoords[_index].x;
+			this.mapCoords[j].spoty = newMapCoords[_index].y;
+
+			this.mapCoords[j].x = newMapCoords[_index].x;
+			this.mapCoords[j].y = newMapCoords[_index].y;
+			
+			//this.mapCoords[j].spotz = newMapCoords[_index].z;
+
+			console.log("idx " + _index + " _idx " + index + " " + newMapCoords[_index].x + " " + j);
+		});		
 	}
 
 
@@ -343,14 +375,9 @@ class LbMap {
 
 	rebuildMapData(mapdata) {
 		this.object.remove(this.particles);
-		
-
 		this.object.remove(this.square_group);
-
 		this.scene.remove(this.radius_group);
-
 		this.particles = this.generateMap();
-
 
 		for (var n = 0;n<this.map_lines_list.length;n++){	
 			this.map_lines_list[n].geometry.dispose();							
@@ -358,12 +385,9 @@ class LbMap {
 		}
 		
 		this.generateLineMap(this.arrayOfMaps);
-
 		this.square_group = this.generateWindows();
 		this.regeneratemap(true);
-		
 		this.object.add(this.particles);
-
 		this.object.add(this.square_group);
 	}
 
@@ -932,8 +956,8 @@ class LbMap {
 			}
 
 			// dirsx is a global target spot
-			dirsx = this.mapCoords[j].spotx + 10 + j*3%5;// + 80;
-			dirsy = this.mapCoords[j].spoty + 10 + j*3%5;// + 80;
+			dirsx = this.mapCoords[j].spotx + 1;// + 80;
+			dirsy = this.mapCoords[j].spoty + 1;// + 80;
 
 			//console.log("sx: " + sx + " sy: " + sy + " " + this.mapCoords[j].sx + " " + this.mapCoords[j].sy + " " +  " "  + this.mapCoords[j].spotx + " " + this.mapCoords[j].spoty	);
 
@@ -1710,7 +1734,7 @@ class LbMap {
 	
 	}
 
-	updateMapCoords(){
+	updateMapCoords(tgmode = 0){
 		for (let i=0;i<this.mapCoords.length;i++){
 			this.mapCoords[i].fi = (i%80)*Math.PI/40.0;
 			this.mapCoords[i].theta = (i%800)*Math.PI/400.0 + Math.PI/2.0;
@@ -1719,13 +1743,20 @@ class LbMap {
 			this.mapCoords[i].y = this.R * Math.cos(this.mapCoords[i].theta) * Math.sin(this.mapCoords[i].fi);
 			this.mapCoords[i].z = this.R * Math.sin(this.mapCoords[i].theta);
 
+			this.mapCoords[i].spotx = this.R * Math.cos(this.mapCoords[i].theta) * Math.cos(this.mapCoords[i].fi);
+			this.mapCoords[i].spoty = this.R * Math.cos(this.mapCoords[i].theta) * Math.sin(this.mapCoords[i].fi);
+			//this.mapCoords[i].z = this.R * Math.sin(this.mapCoords[i].theta);
+
+
+
 			//this.mapCoords[i].speed = Math.sin((this.fi+this.theta)/2.0)/4.0;
 			//this.mapCoords[i].directionx = 0.0;
 			//this.mapCoords[i].directiony = 0.0;
 			//this.mapCoords[i].directionz = 0.0;
 		}
 
-		this.rebuildMapData();
+		if(tgmode==0)
+			this.rebuildMapData();
 	}
 
 	generateMap(){
