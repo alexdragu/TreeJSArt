@@ -348,7 +348,19 @@ class LbMap {
 			//this.mapCoords[j].spotz = newMapCoords[_index].z;
 
 			console.log("idx " + _index + " _idx " + index + " " + newMapCoords[_index].x + " " + j);
-		});		
+		});	
+		
+		if (newMapCoords.length > this.activeMapCoords.length){
+			let spos = this.activeMapCoords.length - 1;
+			let last_idx 
+			newMapCoords
+			.filter ( (entry, index) => {return index > spos})
+			.forEach( (entry, index) => {
+				this.activeMapCoords.push({index,0,0,})				
+			});
+		}
+
+
 	}
 
 
@@ -1405,7 +1417,8 @@ class LbMap {
 					// if it a flat map point go for direct coordinates
 					// to do : obsolete all calculations for projection
 					//if (this.mapCoords[j].mode == 1)
-						vdest = new THREE.Vector3(this.mapCoords[j].x,this.mapCoords[j].y,-100); 
+						let vdest_tmp = new THREE.Vector3(this.mapCoords[j].x,this.mapCoords[j].y,-100); 
+						vdest = this.toScreenPosition(vdest_tmp, kx, ky);
 					}
 
 					// final data for particle system after projection
