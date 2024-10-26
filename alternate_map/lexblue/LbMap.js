@@ -172,9 +172,10 @@ class LbMap {
 
 	totalelapsed = 0;
 
-	constructor(scene,object ,R, Vstep, Hstep, window_w, window_h, winxcnt ,winycnt ,fact ,mag, phi_cover, theta_cover){
+	constructor(scene,object, object_still ,R, Vstep, Hstep, window_w, window_h, winxcnt ,winycnt ,fact ,mag, phi_cover, theta_cover){
 		this.scene = scene;
 		this.object = object;
+		this.object_still = object_still;
 		this.R = R;
 		this.Vstep = Vstep;
 		this.Hstep = Hstep;
@@ -374,8 +375,12 @@ class LbMap {
 
 
 	rebuildMapData(mapdata) {
-		this.object.remove(this.particles);
-		this.object.remove(this.square_group);
+		this.object_still.remove(this.particles);
+		this.object_still.remove(this.square_group);
+
+		//this.object.remove(this.particles);
+		//this.object.remove(this.square_group);
+
 		this.scene.remove(this.radius_group);
 		this.particles = this.generateMap();
 
@@ -387,8 +392,12 @@ class LbMap {
 		this.generateLineMap(this.arrayOfMaps);
 		this.square_group = this.generateWindows();
 		this.regeneratemap(true);
-		this.object.add(this.particles);
-		this.object.add(this.square_group);
+		
+		this.object_still.add(this.particles);
+		this.object_still.add(this.square_group);
+				
+		//this.object.add(this.particles);
+		//this.object.add(this.square_group);
 	}
 
 	regeneratemap(regen){
@@ -441,9 +450,12 @@ class LbMap {
 			//this.scene.remove(this.square_surface_group);
 		}
 
-		this.object.remove(this.square_group);
+		this.object_still.remove(this.square_group);
+		//this.object.remove(this.square_group);
+		
 		this.square_group = this.generateWindows();
-		this.object.add(this.square_group);	
+		this.object_still.add(this.square_group);	
+		//this.object.add(this.square_group);	
 
 		//this.scene.add(this.square_surface_group);
 
@@ -1514,23 +1526,73 @@ class LbMap {
 	
 	vecOnSphereRotate(x,y,z,hstep, vstep, i, j){						
 		var vec;
+		var vecaxisx,vecaxisy;
+
 		var quaternion = new THREE.Quaternion();
+
+		var quaternion1 = new THREE.Quaternion();
+		var quaternion2 = new THREE.Quaternion();
 
 		vec = new THREE.Vector3(x,y,z);
 
+
+		vecaxisx = vec.clone().normalize();
+		vecaxisy = vec.clone().normalize();
+		console.log ('Initial axis:' , vecaxisx);
+/*
+		quaternion1.setFromAxisAngle( new THREE.Vector3( 0, 1, 0 ), this.defIndextheta);				
+		vecaxisx.applyQuaternion( quaternion );
+	
+		quaternion2.setFromAxisAngle( new THREE.Vector3( -1, 0, 0 ), this.defIndexfi);		
+		vecaxisy.applyQuaternion( quaternion );	
+*/
+		console.log('Axis quaternion:', quaternion);
+		console.log('Axis after second rotation:', vecaxisx);
+
+
 		// get the main shape
-		quaternion.setFromAxisAngle( new THREE.Vector3( 0, 1, 0 ), j*vstep - this.prjMapData.y*vstep/2.0 + vstep/2.0);
+		
+		quaternion1.setFromAxisAngle( new THREE.Vector3( 0, 1, 0 ), j*vstep - this.prjMapData.y*vstep/2.0 + vstep/2.0 ) ;
+//		vec.applyQuaternion( quaternion1 );
+
+		quaternion2.setFromAxisAngle( new THREE.Vector3( -1, 0, 0 ), i*hstep - this.prjMapData.x*hstep/2.0 + hstep/2.0 );		
+//		vec.applyQuaternion( quaternion2 );		
+		
+		quaternion.multiplyQuaternions(quaternion2, quaternion1);
 		vec.applyQuaternion( quaternion );
 
-		quaternion.setFromAxisAngle( new THREE.Vector3( -1, 0, 0 ), i*hstep - this.prjMapData.x*hstep/2.0 + hstep/2.0 );		
-		vec.applyQuaternion( quaternion );							
+		/*
+		console.log('Initial vector:', vec);
+		quaternion1.setFromAxisAngle( vecaxisx.normalize(), j*vstep - this.prjMapData.y*vstep/2.0 + vstep/2.0 ) ;
+		vec.applyQuaternion( quaternion );
+
+		quaternion2.setFromAxisAngle( vecaxisy.normalize(), i*hstep - this.prjMapData.x*hstep/2.0 + hstep/2.0 );		
+		vec.applyQuaternion( quaternion );	
+		console.log('Rotated vector:', vec);	
+*/
+		
+
+
+
+
+		//const a = new THREE.Euler( this.defIndextheta, this.defIndexfi, 0, 'XYZ' );
+		//vec.applyEuler(a);
+
+
+		
+		quaternion1.setFromAxisAngle( new THREE.Vector3( -1, 0, 0 ), this.defIndexfi);		
+		//vec.applyQuaternion( quaternion );	
 
 		// rotate the shape	
-		quaternion.setFromAxisAngle( new THREE.Vector3( 0, 1, 0 ), this.defIndextheta);				
+		quaternion2.setFromAxisAngle( new THREE.Vector3( 0, 1, 0 ), this.defIndextheta);				
+		
+		quaternion.multiplyQuaternions(quaternion2, quaternion1);
 		vec.applyQuaternion( quaternion );
 	
-		quaternion.setFromAxisAngle( new THREE.Vector3( -1, 0, 0 ), this.defIndexfi);		
-		vec.applyQuaternion( quaternion );							
+		//quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), vecaxis.clone().normalize())
+		//vec.applyQuaternion(quaternion);
+
+//		vec.y += this.defIndexfi*10;
 
 		return vec;
 	}

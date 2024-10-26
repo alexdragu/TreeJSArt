@@ -66,7 +66,7 @@
 				//gl_PointSize = 1.0 * size *(1.0 + 1.0 * vRightFriend1.x* vRightFriend1.y/50.0);//* ( 300.0 / -mvPosition.z );
 				//gl_PointSize = 2.0 * size *(2.0 + 1.0 * vRightFriend1.x* vRightFriend1.y/20.0);//* ( 300.0 / -mvPosition.z );
 //				gl_PointSize = 0.3 * size *(2.0 + 1.0 * vRightFriend1.x* vRightFriend1.y/20.0);//* ( 300.0 / -mvPosition.z );
-				gl_PointSize =  20.0f;
+				gl_PointSize =  5.0f;
 				//gl_PointSize = gl_PointSize*200.0	;
 				//gl_Position = projectionMatrix * mvPosition;
 				//gl_Position = projectionMatrix * (mvPosition + 1.8*vec4(vRightFriend1,0.0));
@@ -364,7 +364,7 @@ function getFlatObjectString(entry) {
 			let aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
 			let scrrapmap = 1;
 			let container, stats;
-			let camera, scene, renderer, mesh, mesh3, controls;
+			let camera, scene, renderer, mesh, mesh3, meshstop, controls;
 			let cameraRig, activeCamera, activeHelper;
 			let cameraPerspective, cameraOrtho;
 			let cameraPerspectiveHelper, cameraOrthoHelper;
@@ -489,11 +489,20 @@ function getFlatObjectString(entry) {
 					new THREE.SphereGeometry( 5, 16, 8 ),
 					new THREE.MeshBasicMaterial( { color: 0x0000ff, wireframe: true } )
 				);
+
+				meshstop = new THREE.Mesh(
+					new THREE.SphereGeometry( R, 16, 8 ),
+					new THREE.MeshBasicMaterial( { color: 0x0000ff, wireframe: true } )
+				);
+
+				meshstop.position.z = -150;
+				meshstop.position.y = 150;				
 				mesh3.position.z = 150;
 
 				//cameraRig.add( mesh3 );
+				cameraRig.add( meshstop );
 
-				lbMap = new LbMap(scene, mesh, R,2*Math.PI/5.0,2*Math.PI/5.0,100,100,1,1,1.0,1.0, Math.PI, Math.PI);
+				lbMap = new LbMap(scene, mesh, meshstop, R,2*Math.PI/5.0,2*Math.PI/5.0,100,100,1,1,1.0,1.0, Math.PI, Math.PI);
 				lbMap.setScrSize(-0.5 * frustumSize * aspect * scrrapmap, 
 				frustumSize*scrrapmap );
 				lbMap.init();	
