@@ -335,28 +335,37 @@ class LbMap {
 		
 			if (index >= newMapCoords.length ){
 				// shuld eliminate from acctivemapCoords
-				this.activeMapCoords[index].j = 0;
-				return;
+				//this.activeMapCoords[index].j = 0;
+
+				this.mapCoords[j].spotx = 1000;
+				this.mapCoords[j].spoty = 1000;
+				//return;
+			}else{
+
+				this.mapCoords[j].spotx = newMapCoords[_index].x;
+				this.mapCoords[j].spoty = newMapCoords[_index].y;
+
+				this.mapCoords[j].x = newMapCoords[_index].x;
+				this.mapCoords[j].y = newMapCoords[_index].y;
+				
+				//this.activeMapCoords[index].j = 0;
+				//this.mapCoords[j].spotz = newMapCoords[_index].z;
+
+				console.log("idx " + _index + " _idx " + index + " " + newMapCoords[_index].x + " " + j);
 			}
-
-			this.mapCoords[j].spotx = newMapCoords[_index].x;
-			this.mapCoords[j].spoty = newMapCoords[_index].y;
-
-			this.mapCoords[j].x = newMapCoords[_index].x;
-			this.mapCoords[j].y = newMapCoords[_index].y;
 			
-			//this.mapCoords[j].spotz = newMapCoords[_index].z;
-
-			console.log("idx " + _index + " _idx " + index + " " + newMapCoords[_index].x + " " + j);
 		});	
-		
+
 		if (newMapCoords.length > this.activeMapCoords.length){
 			let spos = this.activeMapCoords.length - 1;
-			let last_idx 
 			newMapCoords
 			.filter ( (entry, index) => {return index > spos})
-			.forEach( (entry, index) => {
-				this.activeMapCoords.push({index,0,0,})				
+			.forEach( (entry, index) => {				
+				let j = spos + 1 + index;
+				this.mapCoords.push(entry);
+
+				let len = this.mapCoords.length - 1;		
+				this.activeMapCoords.push ({_index:j, kx:0, ky:0, j:len});			
 			});
 		}
 
@@ -1788,7 +1797,7 @@ class LbMap {
 			//var theta = THREE.MathUtils.randFloatSpread( 2*Math.PI/3 * (i%3) );
 			var theta =  2*Math.PI/8;
 
-			this.mapCoords.push(new MapCoord(fi,theta, this.R));								
+			this.mapCoords.push(new MapCoord(fi,theta, this.R));
 		}				
 	}
 

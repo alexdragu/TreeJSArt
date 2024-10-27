@@ -14,7 +14,7 @@
 	<body>
 		<canvas class="webgl"></canvas>
 
-		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a>  BL Map Version v0.95<br/>
+		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a>  BL Map Version v0.951<br/>
 		<b>O</b> orthographic <b>P</b> perspective <b>H</b> hide title <b>
 		</div>
 
@@ -66,7 +66,7 @@
 				//gl_PointSize = 1.0 * size *(1.0 + 1.0 * vRightFriend1.x* vRightFriend1.y/50.0);//* ( 300.0 / -mvPosition.z );
 				//gl_PointSize = 2.0 * size *(2.0 + 1.0 * vRightFriend1.x* vRightFriend1.y/20.0);//* ( 300.0 / -mvPosition.z );
 //				gl_PointSize = 0.3 * size *(2.0 + 1.0 * vRightFriend1.x* vRightFriend1.y/20.0);//* ( 300.0 / -mvPosition.z );
-				gl_PointSize =  5.0f;
+				gl_PointSize =  10.0f;
 				//gl_PointSize = gl_PointSize*200.0	;
 				//gl_Position = projectionMatrix * mvPosition;
 				//gl_Position = projectionMatrix * (mvPosition + 1.8*vec4(vRightFriend1,0.0));
@@ -90,8 +90,8 @@
 
 			void main() {
 
-				//gl_FragColor = vec4( vColor*0.5, 1.0) ;//+ vec4(vRightFriend0*0.5, 0.1);
-				//gl_FragColor = gl_FragColor * texture2D( pointTexture, gl_PointCoord );
+				gl_FragColor = vec4( vColor*0.5, 1.0) ;//+ vec4(vRightFriend0*0.5, 0.1);
+				gl_FragColor = gl_FragColor * texture2D( pointTexture, gl_PointCoord );
 
 				//gl_FragColor = texture2D( pointTexture, gl_PointCoord );
 				
@@ -104,7 +104,7 @@
 				uv.y *= 30.0*vRightFriend2.y + uv.x *vRightFriend2.x;
 */
 
-				gl_FragColor = texture2D( pointTexture, uv );
+//				gl_FragColor = texture2D( pointTexture, uv );
 				
 
 				//gl_FragColor = vec4( vColor*0.5, 0.5 ) + texture2D( pointTexture, gl_PointCoord );
