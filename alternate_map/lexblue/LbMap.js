@@ -172,6 +172,10 @@ class LbMap {
 
 	totalelapsed = 0;
 
+	// Varying parameters
+	//loco = 0; // 0 - 1
+
+
 	constructor(scene,object, object_still ,R, Vstep, Hstep, window_w, window_h, winxcnt ,winycnt ,fact ,mag, phi_cover, theta_cover){
 		this.scene = scene;
 		this.object = object;
@@ -248,7 +252,7 @@ class LbMap {
 		};
 
 		this.uniforms = {
-			pointTexture: { value: new THREE.TextureLoader().load( 'textures/sprites/ball.png' ) }
+			pointTexture: { value: new THREE.TextureLoader().load( 'textures/sprites/disc.png' ) }     //ball
 		};		
 
 		this.uniforms_paper = {
@@ -257,7 +261,7 @@ class LbMap {
 
 		this.shaderMaterial = new THREE.ShaderMaterial( {
 
-			uniforms: this.uniforms,
+			uniforms: this.uniforms1,
 			vertexShader: document.getElementById( 'vertexshader' ).textContent,
 			fragmentShader: document.getElementById( 'fragmentshader' ).textContent,
 
@@ -892,6 +896,19 @@ class LbMap {
 		}
 
 	}
+
+
+	// time varyiing global function
+	loco = 0;
+	locot = 0;
+
+	timevarry(timeBetweenCalls){
+		this.locot += timeBetweenCalls/4;
+		//this.loco = Math.sin(this.locot);
+		//console.log("timeBetweenCalls: " + timeBetweenCalls + " locot: " + this.locot + " loco" + this.loco);
+		return this.loco;
+	}
+
 	// sx,sy,sz are particle effects after projection
 	// spotx, spoty,s potz initial shape coordinates
 
@@ -914,6 +931,8 @@ class LbMap {
 			return;
 
 //		if (this.friendsSet) return;
+
+		this.timevarry(timeBetweenCalls);
 
 		if (refrien)
 			this.setFriends(fcount,0,proximity);
@@ -983,6 +1002,7 @@ class LbMap {
 				}
 				dirx = sumX / _fcount;
 				diry = sumY / _fcount;
+
 			}else{
 				dirx = 0;
 				diry = 0;
@@ -1009,18 +1029,17 @@ class LbMap {
 				diry = 0.0;
 				amp = 0.0;
 			}else{			
-				dirx = (sx - dirx) ;;/// amp;		VL
-				diry = (sy - diry) ;;/// amp;      VL
 
+				dirx = (sx - dirx) ;/// amp;		VL			
+				diry = (sy - diry) ;/// amp;      VL
+			
 				// OV
 				//dirx = (sx - dirx) / amp;
-				//diry = (sy - diry) / amp;
+				//diry = (sy - diry) / amp;			
 
-			// quantum state jump 
-				// VL1
-				//if (Math.abs(dirx) < segment) dirx = -Math.sign(dirx)*segment/2.0;
-				//if (Math.abs(diry) < segment) diry = -Math.sign(diry)*segment/2.0;	
-
+				dirx = dirx + Math.abs(dirx)*2.8*Math.sin(this.locot+_index)*Math.sin(this.locot+_index/2.0) + dirx*3.8*Math.cos(this.locot+_index);
+				diry = diry +  Math.abs(diry)*2.8*Math.sin(this.locot+_index/3.0)*Math.sin(this.locot+_index/2.0) + diry*3.8*Math.sin(this.locot+_index);
+				
 			}
 			
 			let amp1 = Math.sqrt((sx-dirsx)*(sx-dirsx) + (sy-dirsy)*(sy-dirsy))
@@ -1031,38 +1050,27 @@ class LbMap {
 			}else{			
 				dirsx = (sx - dirsx) ;
 				dirsy = (sy - dirsy) ;
-
-				// quantum state jump 
-				// VL1
-				//if (Math.abs(dirsx) < segment) dirsx = -Math.sign(dirsx)*segment/2.0;
-				//if (Math.abs(dirsy) < segment) dirsy = -Math.sign(dirsy)*segment/2.0;
 			}
 
 //amp1 = 0;
-//dirsx = 0;
-//dirsy = 0;
+dirsx = 0;
+dirsy = 0;
 
 // Temperate the imact of sport forced position
 //dirsx/=10;
 //dirsy/=10;
-//amp = 0;
 
+//amp = 0;
 //dirx = 0.0;
 //diry = 0.0;
 
-//console.log(dirx + " " + diry + " " + amp + " " + amp1 + " " + this.mapCoords[j].speed + " " + timeBetweenCalls + " " + norm + " " + this.mapCoords[j].directionx + " " + this.mapCoords[j].directiony)	;
-
-//this.mapCoords[j].speed = -2.1;
-			//this.mapCoords[j].speed -= Math.sign(amp+amp1)*timeBetweenCalls/norm;	
 
 			let new_speed = Math.sqrt( (dirx+dirsx)*(dirx+dirsx) + (diry+dirsy)*(diry+dirsy) ); 
 			//speed = 10*this.mapCoords[j].speed*timeBetweenCalls;///new_speed;
-			//onsole.log("speed: " + speed + " " + this.mapCoords[j].speed + " " + new_speed + " " + timeBetweenCalls);
+
 			speed = this.mapCoords[j].speed;//*timeBetweenCalls;
-			//console.log("Speed " + speed + " " + this.mapCoords[j].speed + " " + timeBetweenCalls);
-			//speed -= Math.sin(new_speed)*0.1*Math.sign(new_speed)*timeBetweenCalls/(new_speed);
-			
-			
+
+			//speed -= Math.sin(new_speed)*0.1*Math.sign(new_speed)*timeBetweenCalls/(new_speed);					
 			//speed = timeBetweenCalls/(new_speed);
 			//speed = -1000 * timeBetweenCalls*(new_speed);
 			//new_speed = amp;
@@ -1071,15 +1079,11 @@ class LbMap {
 			speed = -240*timeBetweenCalls*timeBetweenCalls*timeBetweenCalls ;/// (new_speed);  // VL
 
 //			speed =  -timeBetweenCalls ;/// (new_speed);  // VL
-
 			//speed -= 0.2* timeBetweenCalls*(new_speed);
 			//speed = -1000* timeBetweenCalls*(new_speed);  // this is ok
 
 			// OV
 			//speed = 400*(-1+Math.sin(this.mapCoords[j].type)/2.0)*timeBetweenCalls*(new_speed);  // this is ok
-
-			//console.log("normd: " + normd + "dx " + dirx + "dy " + diry + "dsx " + dirsx + "dsy " + dirsy);
-//			if (normd==0.0) normd = 1.0;
 
 			//OV, VL
 			dispx = this.mapCoords[j].directionx * speed ;
@@ -1088,14 +1092,10 @@ class LbMap {
 			this.mapCoords[j].directionx = (dirx+dirsx) ;/// new_direction vector; // VL
 			this.mapCoords[j].directiony = (diry+dirsy) ;/// new_direction vector;  // VL
 
-
 			// OV
 			//this.mapCoords[j].directionx = (dirx+dirsx) / new_speed;  
 			//this.mapCoords[j].directiony = (diry+dirsy) / new_speed;  
-
-			//console.log("Aspeedx: " + speedx + " speedy: " + speedy + " " +  speed + " dx" + this.mapCoords[j].directionx + " dy" + this.mapCoords[j].directiony	);
-			
-			
+	
 			sx = sx + dispx ;// VL //*Math.sin((this.totalelapsed/100.0)) + sx%30*speedx*Math.cos(sx/j%20.0)/6 ;
 			sy = sy + dispy ;// VL //*Math.sin(sy/(2*j%10.0) +(this.totalelapsed/170.0)) + sy%30*speedx*Math.cos(sy/j%20.0)/6;
 			
@@ -1103,15 +1103,21 @@ class LbMap {
 			//sx = sx + dispx * timeBetweenCalls;
 			//sy = sy + dispy * timeBetweenCalls;
 			
-			sz = positionAttribute.getZ(_index);
 
+
+
+			// Update with the new parameters
+
+			sz = positionAttribute.getZ(_index);
 			positionAttribute.setXYZ(_index, sx, sy, sz);
 			this.mapCoords[j].speed = speed;
-
 			// this is actually useles
 			this.mapCoords[j].sx = sx;
 			this.mapCoords[j].sy = sy;
 			this.mapCoords[j].sz = sz;
+
+
+
 
 			// debug coloring	- very ugly		
 			if (this.mapCoords[j].type == 1000){
@@ -1820,12 +1826,12 @@ class LbMap {
 
 	updateMapCoords(tgmode = 0){
 		for (let i=0;i<this.mapCoords.length;i++){
-			this.mapCoords[i].fi = (i%80)*Math.PI/40.0;
-			this.mapCoords[i].theta = (i%800)*Math.PI/400.0 + Math.PI/2.0;
+			this.mapCoords[i].fi = ((i+this.locot*20)%120)*Math.PI/100.0 *Math.sin((this.locot*4+i)%250/10.0)/2.0;
+			this.mapCoords[i].theta = ((i+this.locot*10)%800)*Math.PI/400.0 + Math.PI/2.0 + Math.PI*Math.sin((this.locot*4+i)%70/10.0)/30.0;
 			
-			this.mapCoords[i].x = this.R * Math.cos(this.mapCoords[i].theta) * Math.cos(this.mapCoords[i].fi);
-			this.mapCoords[i].y = this.R * Math.cos(this.mapCoords[i].theta) * Math.sin(this.mapCoords[i].fi);
-			this.mapCoords[i].z = this.R * Math.sin(this.mapCoords[i].theta);
+			//this.mapCoords[i].x = this.R * Math.cos(this.mapCoords[i].theta) * Math.cos(this.mapCoords[i].fi);
+			//this.mapCoords[i].y = this.R * Math.cos(this.mapCoords[i].theta) * Math.sin(this.mapCoords[i].fi);
+			//this.mapCoords[i].z = this.R * Math.sin(this.mapCoords[i].theta);
 
 			this.mapCoords[i].spotx = this.R * Math.cos(this.mapCoords[i].theta) * Math.cos(this.mapCoords[i].fi);
 			this.mapCoords[i].spoty = this.R * Math.cos(this.mapCoords[i].theta) * Math.sin(this.mapCoords[i].fi);
