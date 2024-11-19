@@ -2,6 +2,7 @@
 <html lang="en">
 	<head>
 		<title>three.js webgl - cameras</title>
+		<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<link type="text/css" rel="stylesheet" href="main.css">
@@ -15,7 +16,7 @@
 		<canvas class="webgl"></canvas>
 
 		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a>  BL Map Version v0.96<br/>
-		<b>O</b> orthographic <b>P</b> perspective <b>H</b> hide title <b>
+		<b>O</b> orthographic <b>P</b> perspective <b>H</b> <b>hide title </b>
 		</div>
 
 <!-- https://github.com/mapbox/delaunator -->
@@ -265,7 +266,7 @@
 		<script type="importmap">
 			{
 				"imports": {
-					"three": "../../../build/three.module.js",
+					"three": "./build/three.module.js",					
 					"three/addons/": "./jsm/",
 					"three/lexblue/": "./lexblue/"
 				}
@@ -284,8 +285,10 @@
 			import { LbMap } from 'three/lexblue/LbMap.js';
 			import { AttributeGenerator } from 'three/lexblue/AttributeGenerator.js';
 // ...
+
+
 function getObjectsCount() {
-	const url = `http://${window.location.hostname}:8082/get_count`;
+	const url = `https://${window.location.hostname}:30001/get_count`;
 
 	return fetch(url)
 		.then(response => response.json())
@@ -301,7 +304,7 @@ function getObjectsCount() {
 }
 
 function getObjectsCountFlat() {
-	const url = `http://${window.location.hostname}:8082/get_flat_count`;
+	const url = `https://${window.location.hostname}:30001/get_flat_count`;
 
 	return fetch(url)
 		.then(response => response.json())
@@ -317,7 +320,7 @@ function getObjectsCountFlat() {
 }
 
 function getObjectString(entry) {
-    const url = `http://${window.location.hostname}:8082/get_entry?obj_entry=${entry}`;
+    const url = `https://${window.location.hostname}:30001/get_entry?obj_entry=${entry}`;
 
     return fetch(url)
         .then(response => response.text())  // Get the response as text
@@ -338,7 +341,7 @@ function getObjectString(entry) {
 
 
 function getFlatObjectString(entry) {
-    const url = `http://${window.location.hostname}:8082/get_flat_entry?obj_entry=${entry}`;
+    const url = `https://${window.location.hostname}:30001/get_flat_entry?obj_entry=${entry}`;
 
     return fetch(url)
         .then(response => response.text())  // Get the response as text

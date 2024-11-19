@@ -1037,8 +1037,8 @@ class LbMap {
 				//dirx = (sx - dirx) / amp;
 				//diry = (sy - diry) / amp;			
 
-				dirx = dirx + Math.abs(dirx)*2.8*Math.sin(this.locot+_index)*Math.sin(this.locot+_index/2.0) + dirx*3.8*Math.cos(this.locot+_index);
-				diry = diry +  Math.abs(diry)*2.8*Math.sin(this.locot+_index/3.0)*Math.sin(this.locot+_index/2.0) + diry*3.8*Math.sin(this.locot+_index);
+				//dirx = dirx + Math.abs(dirx)*2.8*Math.sin(this.locot+_index)*Math.sin(this.locot+_index/2.0) + dirx*3.8*Math.cos(this.locot+_index);
+				//diry = diry + Math.abs(diry)*2.8*Math.sin(this.locot+_index/3.0)*Math.sin(this.locot+_index/2.0) + diry*3.8*Math.sin(this.locot+_index);
 				
 			}
 			
@@ -1075,11 +1075,13 @@ dirsy = 0;
 			//speed = -1000 * timeBetweenCalls*(new_speed);
 			//new_speed = amp;
 			
-//			speed =  -40*timeBetweenCalls/(new_speed) ;/// (new_speed);  // VL - plasma implosion
-			speed = -240*timeBetweenCalls*timeBetweenCalls*timeBetweenCalls ;/// (new_speed);  // VL
+			speed =  -40*timeBetweenCalls/(new_speed) ;/// (new_speed);  // VL - plasma implosion
+			
+// VL3
+//			speed = -240*timeBetweenCalls*timeBetweenCalls*timeBetweenCalls ;/// (new_speed);  // VL
 
 //			speed =  -timeBetweenCalls ;/// (new_speed);  // VL
-			//speed -= 0.2* timeBetweenCalls*(new_speed);
+//			speed -= 0.2* timeBetweenCalls*(new_speed);
 			//speed = -1000* timeBetweenCalls*(new_speed);  // this is ok
 
 			// OV

@@ -1,0 +1,2 @@
+set PATH=/opt/alt/alt-nodejs18/root/usr/bin:$PATH
+export PATH
