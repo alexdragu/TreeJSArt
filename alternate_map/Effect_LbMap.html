@@ -15,7 +15,7 @@
 	<body>
 		<canvas class="webgl"></canvas>
 
-		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a>  BL Map Version v0.96<br/>
+		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a>  BL Map Version v0.961<br/>
 		<b>O</b> orthographic <b>P</b> perspective <b>H</b> <b>hide title </b>
 		</div>
 
@@ -150,10 +150,6 @@
 
 		</script>
 
-
-
-
-
 		<script type="x-shader/x-vertex" id="vertexshader_surface">
 			
 			attribute float size;		
@@ -262,7 +258,6 @@
 
 		</script>
 
-
 		<script type="importmap">
 			{
 				"imports": {
@@ -366,7 +361,7 @@ function getFlatObjectString(entry) {
 			let SCREEN_HEIGHT = window.innerHeight;
 			let aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
 			let scrrapmap = 1;
-			let container, stats;
+			let container, stats, containerTitle;
 			let camera, scene, renderer, mesh, mesh3, meshstop, controls;
 			let cameraRig, activeCamera, activeHelper;
 			let cameraPerspective, cameraOrtho;
@@ -425,6 +420,10 @@ function getFlatObjectString(entry) {
 			let countries = [];
 			var hrap = 1.0;
 
+			let paddingPercentHorizontal = 0.2;
+			let paddingPercentVertical = 0.2;
+
+
 			init();
 			animate();
 
@@ -436,7 +435,16 @@ function getFlatObjectString(entry) {
 				
 				container = document.createElement( 'div' );
 				container.setAttribute("id","maindiv");				
+
+				containerTitle = document.createElement( 'div' );
+				containerTitle.setAttribute("id","mainTitle");
+				containerTitle.innerHTML = "Work Title";
+
+				containerTitle.style.maxWidth = "fit-content";
+				containerTitle.style.margin = "auto";
+
 				document.body.appendChild( container );
+				//document.body.appendChild( containerTitle );
 
 				scene = new THREE.Scene();
 
@@ -535,7 +543,13 @@ function getFlatObjectString(entry) {
 				renderer = new THREE.WebGLRenderer( {canvas, preserveDrawingBuffer: true , antialias: true } );
 				
 				renderer.setPixelRatio( window.devicePixelRatio );
-				renderer.setSize( SCREEN_WIDTH, SCREEN_HEIGHT );
+				//renderer.setSize( SCREEN_WIDTH * (1.0-paddingPercentHorizontal), 
+				//SCREEN_HEIGHT * (1.0 - paddingPercentVertical));
+
+				renderer.setSize( SCREEN_WIDTH , 
+				SCREEN_HEIGHT * (1.0 - paddingPercentVertical));
+
+				
 				container.appendChild( renderer.domElement );
 
 				renderer.autoClear = false;
@@ -572,34 +586,15 @@ function getFlatObjectString(entry) {
 			function remap(){
 
 				frustumSize = effectController.frustumSize;
-				//lbMap = new LbMap(scene, mesh, R,2*Math.PI/5.0,2*Math.PI/5.0,100,100,1,1,1.0,1.0, Math.PI, Math.PI);
-				
-				//lbMap.setScrSize(-0.5 * frustumSize * aspect * scrrapmap, 
-				//frustumSize*scrrapmap );
-				//lbMap.init();									
-				//lbMap.factory();
 
-				cameraRig.remove(cameraOrtho);
+				cameraOrtho.left = hrap * frustumSize * aspect / -2;
+				cameraOrtho.right = hrap * frustumSize * aspect / 2;
+				cameraOrtho.top = frustumSize / 2;
+				cameraOrtho.bottom = frustumSize / -2;
+				cameraOrtho.updateProjectionMatrix();
 
-				cameraOrtho = new THREE.OrthographicCamera
-				( hrap * frustumSize * aspect / - 2, 
-				hrap *  frustumSize * aspect / 2, 
-				frustumSize / 2, 
-				frustumSize / - 2, 
-				150, 1000 );
-
-				scene.remove( cameraOrthoHelper );
-				cameraOrthoHelper = new THREE.CameraHelper( cameraOrtho );
-				
-				scene.add( cameraOrthoHelper );
-			//
 				activeCamera = cameraOrtho;
 				activeHelper = cameraOrthoHelper;
-
-				// counteract different front orientation of cameras vs rig
-				cameraOrtho.rotation.y = Math.PI;
-
-				cameraRig.add(cameraOrtho);
 
 				//lbMap.ReGenerateMap(false);
 			
@@ -876,12 +871,11 @@ function getFlatObjectString(entry) {
 
 			function onWindowResize() {
 
-				var hrep = 1.0;
 				SCREEN_WIDTH = window.innerWidth;
 				SCREEN_HEIGHT = window.innerHeight;
 				aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
 
-				renderer.setSize( SCREEN_WIDTH, SCREEN_HEIGHT );
+				renderer.setSize( SCREEN_WIDTH * (1.0- paddingPercentHorizontal), SCREEN_HEIGHT * (1.0-paddingPercentVertical) );
 
 				camera.aspect = 0.5 * aspect;
 				camera.updateProjectionMatrix();
@@ -889,10 +883,10 @@ function getFlatObjectString(entry) {
 				cameraPerspective.aspect = 0.5 * aspect;
 				cameraPerspective.updateProjectionMatrix();
 
-				cameraOrtho.left = hrep * frustumSize * aspect / -2;
-				cameraOrtho.right = hrep * frustumSize * aspect / 2;
-				cameraOrtho.top = frustumSize / -2;
-				cameraOrtho.bottom = frustumSize / 2;
+				cameraOrtho.left = hrap * frustumSize * aspect / -2;
+				cameraOrtho.right = hrap * frustumSize * aspect / 2;
+				cameraOrtho.top = frustumSize / 2;
+				cameraOrtho.bottom = frustumSize / -2;
 				cameraOrtho.updateProjectionMatrix();
 
 				//lbMap.setScrSize(-0.5 * frustumSize * aspect / - 2, frustumSize / 2 );
@@ -1143,7 +1137,7 @@ if (go_auto){
 				activeHelper.visible = false;
 
 				//renderer.setViewport( 0, 0, SCREEN_WIDTH / 2, SCREEN_HEIGHT );
-				renderer.setViewport( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT );
+				renderer.setViewport( (paddingPercentHorizontal/ 2.0) * SCREEN_WIDTH , 0,  SCREEN_WIDTH * (1.0-paddingPercentHorizontal) , 0.6 * SCREEN_HEIGHT);				
 
 				renderer.render( scene, activeCamera );
 
@@ -1152,9 +1146,7 @@ if (go_auto){
 				}
 
 				renderer.setViewport( SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2, SCREEN_HEIGHT );
-
 				renderer.render( scene, camera );
-
 			}
 
 

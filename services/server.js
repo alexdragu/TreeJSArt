@@ -1,10 +1,28 @@
 const express = require('express');
 const cors = require('cors');
+const https = require('https')
+const fs = require("fs");
+
+var privateKey  = fs.readFileSync('./sslcert/id.key', 'utf8');
+var certificate = fs.readFileSync('./sslcert/id.crt', 'utf8');
+var credentials = {key: privateKey, cert: certificate};
+
+/*
+ const corsOptions = {
+   origin: 'https://www.interactivedigital.ro:30002',//(https://your-client-app.com)
+   optionsSuccessStatus: 200,
+ };
+*/
+ const corsOptions = {
+  origin: 'https://localhost:30002',//(https://your-client-app.com)
+  optionsSuccessStatus: 200,
+};
+
 
 const app = express();
-app.use(cors());
+//app.use(cors(corsOptions));
+app.use(cors(corsOptions));
 
-const fs = require("fs");
 const { parse } = require("csv-parse");
 
 var formidable = require('formidable');
@@ -117,9 +135,13 @@ app.get('/get_flat_entry', (req, res) => {
 });
 
 // Listen to the App Engine-specified port, or 8080 otherwise
-const PORT = process.env.PORT || 8082;
-app.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}...`);
-});
+//const PORT = process.env.PORT || 8082;
+const PORT = 30001;
+const hostname = 'interactivedigital.ro';
+
+https.createServer(credentials, app).listen(PORT);
+//app.listen(PORT, () => {
+//  console.log(`Server listening on port ${PORT}...`);
+//});
 
 

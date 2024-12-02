@@ -281,6 +281,7 @@ class LbMap {
 			blending: THREE.AdditiveBlending,
 			depthTest: false,
 			transparent: true,
+			side: THREE.DoubleSide, // we do not know why this is needed
 			vertexColors: true
 
 		} );
@@ -1705,11 +1706,9 @@ dirsy = 0;
 
 		geometry.setFromPoints( points );
 		
-
 		const material = new THREE.LineBasicMaterial( { color: 0xff2222 } );										
 		const line = new THREE.Line( geometry, material );	
 		const line_flat = new THREE.Line( geometry.clone(), material );	
-
 
 		let geometry_surface = new THREE.BufferGeometry();
 		let geometry_flat_surface = new THREE.BufferGeometry();
@@ -1725,7 +1724,8 @@ dirsy = 0;
 			vertices.push(points[i].x, points[i].y, points[i].z);
 			vertices_flat_surface.push(points[i].x, points[i].y, points[i].z);
 		}
-		uv.push(1,1); uv.push(1,-1); uv.push(0,1); uv.push(0,-1);
+		uv.push(1,0); uv.push(0,0); uv.push(0,1); uv.push(1,1);
+
 		// Define the vertices that make up each of the two triangles
 		indices.push(0, 1, 2); // First triangle
 		indices.push(0, 2, 3); // Second triangle
@@ -1740,13 +1740,9 @@ dirsy = 0;
 		geometry_flat_surface.setAttribute('position', new THREE.Float32BufferAttribute(vertices_flat_surface, 3));
 		geometry_flat_surface.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
 		
-		let material_surface = new THREE.MeshBasicMaterial({ color: 0xffaaff, side: THREE.DoubleSide });
-		let material_flat_surface = new THREE.MeshBasicMaterial({ color: 0x111822, side: THREE.FrontSide });
+		let material_surface = new THREE.MeshBasicMaterial({ color: 0xffFFff, side: THREE.FrontSide });
 	
 		let mesh = new THREE.Mesh(geometry_surface, material_surface);
-		
-		// mesh and mesh_flat_surface are equal but they need to be cloned
-		//let mesh_flat_surface = new THREE.Mesh(geometry_flat_surface, material_flat_surface);
 
 		let mesh_flat_surface = new THREE.Mesh(geometry_flat_surface, this.shaderMaterialCanvas);
 
@@ -1759,7 +1755,12 @@ dirsy = 0;
 	// build the squeares for wach window to be projected on the sphere
 	generateWindows(){
 		let square_group = new THREE.Group();
-		
+
+		this.square_surface_group = new THREE.Group();
+		this.square_flat_group = new THREE.Group();
+		this.square_flat_surface_group = new THREE.Group();
+
+
 		const vstep = this.prjMapData.vstep;
 		const hstep = this.prjMapData.hstep;
 
