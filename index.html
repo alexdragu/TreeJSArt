@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>GLSL three js</title>
+		<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link type="text/css" rel="stylesheet" href="main.css">
+		<style>
+            b {
+                color: green;
+            }
+			.grid-container {
+				display: grid;
+				grid-template-columns: 1fr 1fr;
+				grid-template-rows: 1fr 1fr;
+				gap: 10px;
+				width: 50%;
+				height: 50%;
+				margin: auto;
+				position: absolute;
+				top: 0;
+				bottom: 0;
+				left: 0;
+				right: 0;
+			}
+			.grid-item {
+				background-color: #f0f0f0;
+				border: 1px solid #ccc;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				color: lightgray;
+			}
+			.list-container {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: flex-start;
+				background-color: black;
+				color: lightgray;
+				width: 100%;
+				padding-top: 110px; /* Adjust this value as needed */
+			}
+			.list-item {
+				margin: 5px 0;
+				text-align: left;
+				width: 150px; /* Adjust this value as needed */
+			}
+			.list-title {
+				text-align: left;
+				 /* Adjust this value as needed */
+			}
+
+            .list-title a:nth-child(1) {
+				color: lightblue; 
+                width: 20%;
+			}
+
+			.list-item a:nth-child(1) {
+				color: #4682b4; 
+			}
+			.list-item a:nth-child(2) {
+				color: #4682b4; /* steelblue */
+			}
+			.list-item a:nth-child(3) {
+				color: #32cd32; /* limegreen */
+			}
+			a {
+				color: lightgray;
+				text-decoration: none;
+			}
+			a:hover {
+				text-decoration: underline;
+				}
+			footer {
+				text-align: center;
+				padding: 10px;
+
+				color: #004d4d;
+				position: absolute;
+				bottom: 0;
+				width: 100%;
+				font-family: Arial, sans-serif;
+				font-size: 14px;
+				border-top: 2px solid #003333; /* slightly darker border */
+				}
+			body {
+				overflow-x: hidden;
+				}
+			.header {
+				text-align: center;
+				padding: 20px;
+				background-color: transparent;
+				color: #87bbbb;
+				font-family: Arial, sans-serif;
+				font-size: 16px;
+				border-bottom: 2px solid #003333;
+				}
+			.list-item::before {
+				content: "•";
+				color: lightgray;
+				display: inline-block;
+				width: 1em;
+				margin-left: -1em;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="header">
+			Graphical Artwork Collection
+		</div>
+        <div class="list-container">
+            <div class="list-title" id="info">
+                <a href="https://www.interactivedigital.ro" target="_blank" rel="noopener"> Behavioural anomalies</a> <br/>
+                Particle mechanics based on <b>GLSL</b> shaders modeling non-reallife behaviours using group interaction.
+            </div>
+            <div class="list-item">
+                <a href="/Particles/alternate_map/Effect_LbMap.html" target="_blank" rel="noopener">under implosion</a>
+            </div>
+            <div class="list-item">
+                <a href="/Particles/alternate_map/Effect_LbMap.html" target="_blank" rel="noopener">collapsing stones</a>
+            </div>
+        </div>
+		<footer>
+			@ LexBlue 2025
+		</footer>
+    </body>
+</html>

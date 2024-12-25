@@ -40,7 +40,8 @@ class MapCoord {
 
 			this.x = -fi * 200.0 + 85;
 			this.y = -theta * 200.0 + 85;
-			this.z = R*0.8;
+			this.z = R*0.8 + (Math.random()*60 - 30.0);
+			
 		}
 
 		this.spotx = this.x;
@@ -50,7 +51,7 @@ class MapCoord {
 		// this is in screen space. We have a z just in case we move 3d
 		this.sx = this.x;
 		this.sy = this.y;
-		this.sz = this.y;
+		this.sz = this.z;
 
 		this.friends = [];
 		this.is_friend = false;
@@ -66,6 +67,7 @@ class MapCoord {
 
 		this.favgx = 0.0;
 		this.favgy = 0.0;
+		this.favgz = 0.0;
 
 		this.type = 0;
 
@@ -256,7 +258,8 @@ class LbMap {
 		};		
 
 		this.uniforms_paper = {
-			pointTexture: { value: new THREE.TextureLoader().load( 'textures/paper_black.jpg' ) }
+			//pointTexture: { value: new THREE.TextureLoader().load( 'textures/paper_black.jpg' ) }
+			pointTexture: { value: new THREE.TextureLoader().load( 'textures/paper-texture.jpg' ) }
 		};	
 
 		this.shaderMaterial = new THREE.ShaderMaterial( {
@@ -344,14 +347,17 @@ class LbMap {
 
 				this.mapCoords[j].spotx = 1000;
 				this.mapCoords[j].spoty = 1000;
+				this.mapCoords[j].spotz = 0;
 				//return;
 			}else{
 
 				this.mapCoords[j].spotx = newMapCoords[_index].x;
 				this.mapCoords[j].spoty = newMapCoords[_index].y;
+				this.mapCoords[j].spotz = newMapCoords[_index].z;
 
 				this.mapCoords[j].x = newMapCoords[_index].x;
 				this.mapCoords[j].y = newMapCoords[_index].y;
+				this.mapCoords[j].z = newMapCoords[_index].z;
 				
 				//this.activeMapCoords[index].j = 0;
 				//this.mapCoords[j].spotz = newMapCoords[_index].z;
@@ -581,8 +587,10 @@ class LbMap {
 			let _a = mapCoords[activeMapCoords[x].j];
 			let _b = mapCoords[activeMapCoords[y].j];
 			let reper = mapCoords[activeMapCoords[i].j];
-			let _aDistance = Math.sqrt((_a.sx-reper.sx)* (_a.sx-reper.sx) + (_a.sy-reper.sy)* (_a.sy-reper.sy));
-			let _bDistance = Math.sqrt((_b.sx-reper.sx)* (_b.sx-reper.sx) + (_b.sy-reper.sy)* (_b.sy-reper.sy));
+
+			let _aDistance = Math.sqrt((_a.sx-reper.sx)* (_a.sx-reper.sx) + (_a.sy-reper.sy)* (_a.sy-reper.sy) + (_a.sz-reper.sz)* (_a.sz-reper.sz));
+			let _bDistance = Math.sqrt((_b.sx-reper.sx)* (_b.sx-reper.sx) + (_b.sy-reper.sy)* (_b.sy-reper.sy) + (_b.sz-reper.sz)* (_b.sz-reper.sz));
+
 			return _aDistance - _bDistance;
 		}
 
@@ -594,11 +602,11 @@ class LbMap {
 
 			// only set fmin if full backet
 			if (a.friends.length >= fcount)
-				fmin = Math.sqrt((a.sx-_b.sx)* (a.sx-_b.sx) + (a.sy-_b.sy)* (a.sy-_b.sy));
+				fmin = Math.sqrt((a.sx-_b.sx)*(a.sx-_b.sx) + (a.sy-_b.sy)*(a.sy-_b.sy) + (a.sz-_b.sz)*(a.sz-_b.sz) );
 			
 			if (i==this.show_friend_idx){
-				f_int_max = Math.sqrt((a.sx-_b1.sx)* (a.sx-_b1.sx) + (a.sy-_b1.sy)* (a.sy-_b1.sy));
-				f_int_min = Math.sqrt((a.sx-_b.sx)* (a.sx-_b.sx) + (a.sy-_b.sy)* (a.sy-_b.sy));
+				f_int_max = Math.sqrt((a.sx-_b1.sx) * (a.sx-_b1.sx) + (a.sy-_b1.sy) *(a.sy-_b1.sy) + (a.sz-_b1.sz) *(a.sz-_b1.sz) );
+				f_int_min = Math.sqrt((a.sx-_b.sx) * (a.sx-_b.sx) + (a.sy-_b.sy) * (a.sy-_b.sy) + (a.sz-_b.sz) * (a.sz-_b.sz) );
 				console.log("fmin fintmin fintmax " + fmin + " " + f_int_min + " " + f_int_max);
 			}		
 		}
@@ -606,8 +614,9 @@ class LbMap {
 		for ( var k = i + 1; k < this.activeMapCoords.length; k++ ) {
 			var j = this.activeMapCoords[k].j;
 			var b = this.mapCoords[j];
-			const aDistance = Math.sqrt((a.sx-b.sx)* (a.sx-b.sx) 
-			+ (a.sy-b.sy)* (a.sy-b.sy));
+			const aDistance = Math.sqrt(
+				(a.sx-b.sx)* (a.sx-b.sx) 
+			+ (a.sy-b.sy)* (a.sy-b.sy) + (a.sz-b.sz)* (a.sz-b.sz));
 
 			a.type = 10;
 
@@ -633,7 +642,7 @@ class LbMap {
 						a.friends.sort(compareNumbers);	
 						
 						let _b =  this.mapCoords[this.activeMapCoords[a.friends[a.friends.length-1]].j];					
-						fmin = Math.sqrt((a.sx-_b.sx)* (a.sx-_b.sx) + (a.sy-_b.sy)* (a.sy-_b.sy));						
+						fmin = Math.sqrt((a.sx-_b.sx)* (a.sx-_b.sx) + (a.sy-_b.sy)* (a.sy-_b.sy) + (a.sz-_b.sz)* (a.sz-_b.sz));						
 
 						//if (i==this.show_friend_idx)
 						//	console.log("New fmin : " + fmin + " len" + a.friends.length + "(1)");
@@ -644,7 +653,7 @@ class LbMap {
 					a.friends.sort(compareNumbers);
 					let _b =  this.mapCoords[this.activeMapCoords[a.friends[a.friends.length-1]].j];					
 
-					fmin = Math.sqrt((a.sx-_b.sx)* (a.sx-_b.sx) + (a.sy-_b.sy)* (a.sy-_b.sy));
+					fmin = Math.sqrt((a.sx-_b.sx)* (a.sx-_b.sx) + (a.sy-_b.sy)* (a.sy-_b.sy) + (a.sz-_b.sz)* (a.sz-_b.sz));
 
 					//if (i==this.show_friend_idx) console.log("New fmin : " + fmin + " len" + a.friends.length + "(2)");
 
@@ -689,8 +698,8 @@ class LbMap {
 			let _a = mapCoords[activeMapCoords[x].j];
 			let _b = mapCoords[activeMapCoords[y].j];
 			let reper = mapCoords[activeMapCoords[idx].j];
-			let _aDistance = Math.sqrt((_a.sx-reper.sx)* (_a.sx-reper.sx) + (_a.sy-reper.sy)* (_a.sy-reper.sy));
-			let _bDistance = Math.sqrt((_b.sx-reper.sx)* (_b.sx-reper.sx) + (_b.sy-reper.sy)* (_b.sy-reper.sy));
+			let _aDistance = Math.sqrt((_a.sx-reper.sx)* (_a.sx-reper.sx) + (_a.sy-reper.sy)* (_a.sy-reper.sy) + (_a.sz-reper.sz)* (_a.sz-reper.sz));
+			let _bDistance = Math.sqrt((_b.sx-reper.sx)* (_b.sx-reper.sx) + (_b.sy-reper.sy)* (_b.sy-reper.sy) + (_b.sz-reper.sz)* (_b.sz-reper.sz));
 			return _aDistance - _bDistance;
 		}
 		
@@ -725,8 +734,11 @@ class LbMap {
 	distance (_i,_j){
 		let i = this.activeMapCoords[_i].j;
 		let j = this.activeMapCoords[_j].j;
-		let distance = Math.sqrt((this.mapCoords[i].sx-this.mapCoords[j].sx)* (this.mapCoords[i].sx-this.mapCoords[j].sx) + 
-			(this.mapCoords[i].sy-this.mapCoords[j].sy)* (this.mapCoords[i].sy-this.mapCoords[j].sy));
+		let distance = Math.sqrt(
+			(this.mapCoords[i].sx-this.mapCoords[j].sx)* (this.mapCoords[i].sx-this.mapCoords[j].sx) + 
+			(this.mapCoords[i].sy-this.mapCoords[j].sy)* (this.mapCoords[i].sy-this.mapCoords[j].sy) +
+			(this.mapCoords[i].sz-this.mapCoords[j].sz)* (this.mapCoords[i].sz-this.mapCoords[j].sz)
+		);
 		return distance;
 	}
 
@@ -910,6 +922,10 @@ class LbMap {
 		return this.loco;
 	}
 
+	clamp(val, min, max) {
+		return Math.min(Math.max(val, min), max);
+	};
+
 	// sx,sy,sz are particle effects after projection
 	// spotx, spoty,s potz initial shape coordinates
 
@@ -939,8 +955,7 @@ class LbMap {
 			this.setFriends(fcount,0,proximity);
 
 		//this.setFriends(this.activeMapCoords.length,0);
-		this.friendsSet = true;
-		
+		this.friendsSet = true;		
 
 		positionAttribute = this.particlesMap.geometry.getAttribute( 'position' );
 		// need to get right_friend and size
@@ -957,9 +972,9 @@ class LbMap {
 		let dirsx,dirsy,dirsz;
 		let dreflectx = 0.0;
 		let dreflecty = 0.0;
+		let dreflectz = 0.0;
 
-
-		let speed,dispx, dispy;
+		let speed, dispx, dispy, dispz;
 		let norm = 100.0;
 
 		// Debug frinds are ready so mark them properly
@@ -970,56 +985,67 @@ class LbMap {
 			//console.log("findex : " + fidx + "glb idx "+ this.activeMapCoords[fidx].j +" type : " + this.mapCoords[this.activeMapCoords[fidx].j].type);
 			this.mapCoords[this.activeMapCoords[fidx].j].type = 1000;
 		});
-		console.log(debugSpot.spotx.toFixed(2) + " (<-spx, spy->)" + debugSpot.spoty.toFixed(2));
+		//console.log(debugSpot.spotx.toFixed(2) + " (<-spx, spy->)" + debugSpot.spoty.toFixed(2));
 
 		//console.log("Start Processing ActiveMap-------------");
 		this.activeMapCoords.forEach(({ _index, kx, ky, j }) => {
 
 			// not sure why this was added
-			let tolerance = 1000;
+			let tolerance = 50;
 
 			dreflectx = 0.0;
 			dreflecty = 0.0;
+			dreflectz = 0.0;
 
 			dirx = 0;
 			diry = 0;
+			dirz = 0;
+
 			sx = this.mapCoords[j].sx;
 			sy = this.mapCoords[j].sy;
+			sz = this.mapCoords[j].sz;
 
 			if (this.mapCoords[j].friends.length > 0){
 				let sumX = 0;
 				let sumY = 0;
+				let sumZ = 0;
 				let _fcount = this.mapCoords[j].friends.length;
-				
+				let _rfcount = 0;				
 				for (let i = 0; i < this.mapCoords[j].friends.length; i++) {
-					sumX += this.mapCoords[this.activeMapCoords[this.mapCoords[j].friends[i]].j].sx;
-					sumY += this.mapCoords[this.activeMapCoords[this.mapCoords[j].friends[i]].j].sy;	
-					
 					let distance = this.distance(_index,this.mapCoords[j].friends[i]);
 					if (distance < tolerance){
+						_rfcount++;
+						sumX += this.mapCoords[this.activeMapCoords[this.mapCoords[j].friends[i]].j].sx;
+						sumY += this.mapCoords[this.activeMapCoords[this.mapCoords[j].friends[i]].j].sy;	
+						sumZ += this.mapCoords[this.activeMapCoords[this.mapCoords[j].friends[i]].j].sz;
+
 						dreflectx += (sx - this.mapCoords[this.activeMapCoords[this.mapCoords[j].friends[i]].j].sx);
 						dreflecty += (sy - this.mapCoords[this.activeMapCoords[this.mapCoords[j].friends[i]].j].sy);	
+						dreflectz += (sz - this.mapCoords[this.activeMapCoords[this.mapCoords[j].friends[i]].j].sz);
 					}					
 				}
-				dirx = sumX / _fcount;
-				diry = sumY / _fcount;
-
+				dirx = sumX / _rfcount;
+				diry = sumY / _rfcount;
+				dirz = sumZ / _rfcount;
 			}else{
 				dirx = 0;
 				diry = 0;
+				dirz = 0;
 			}
 
 			// dirsx is a global target spot
 			dirsx = this.mapCoords[j].spotx + 1;// + 80;
 			dirsy = this.mapCoords[j].spoty + 1;// + 80;
+			dirsz = this.mapCoords[j].spotz + 1;// + 80;
+			//console.log("sx: " + sx + " sy: " + sy + " sz: " + sz + this.mapCoords[j].sx + " " + this.mapCoords[j].sy + " " +  " "  + this.mapCoords[j].spotx + " " + this.mapCoords[j].spoty	);
 
-			//console.log("sx: " + sx + " sy: " + sy + " " + this.mapCoords[j].sx + " " + this.mapCoords[j].sy + " " +  " "  + this.mapCoords[j].spotx + " " + this.mapCoords[j].spoty	);
 
 			this.mapCoords[j].favgx = dirx;
 			this.mapCoords[j].favgy = diry;
+			this.mapCoords[j].favgz = dirz;
 
 			// vector to friends target
-			let amp = Math.sqrt((sx-dirx)*(sx-dirx) + (sy-diry)*(sy-diry))
+			let amp = Math.sqrt((sx-dirx)*(sx-dirx) + (sy-diry)*(sy-diry) + (sz-dirz)*(sz-dirz))
 //			console.log("amp: " + amp + " " + sx + " " + sy + " " + dirx + " " + diry);
 			//amp = 1;			
 
@@ -1028,12 +1054,17 @@ class LbMap {
 			if ((isNaN(amp)) || (amp == 0.0)) {
 				dirx = 0.0;
 				diry = 0.0;
+				dirz = 0.0;
 				amp = 0.0;
 			}else{			
 
-				dirx = (sx - dirx) ;/// amp;		VL			
-				diry = (sy - diry) ;/// amp;      VL
-			
+				dirx = 2*Math.cos((sx - dirx))*(sx - dirx) ;/// amp;	VL			
+				diry = 2*Math.cos((sy - diry))*(sy - diry) ;/// amp;      VL
+				dirz = 2*(sz - dirz) ;/// amp;      VL
+
+				dirx = this.clamp(dirx,-200,200);
+				diry = this.clamp(diry,-200,200);
+				dirz = this.clamp(dirz,-200,200);
 				// OV
 				//dirx = (sx - dirx) / amp;
 				//diry = (sy - diry) / amp;			
@@ -1043,37 +1074,37 @@ class LbMap {
 				
 			}
 			
-			let amp1 = Math.sqrt((sx-dirsx)*(sx-dirsx) + (sy-dirsy)*(sy-dirsy))
-			if ((isNaN(amp1)) || (amp1 == 0.0)) {
-				dirsx = 0.0;
-				dirsy = 0.0;
-				amp1 = 0.0;
-			}else{			
+			//let amp1 = Math.sqrt((sx-dirsx)*(sx-dirsx) + (sy-dirsy)*(sy-dirsy) + (sz-dirsz)*(sz-dirsz))
+			//if ((isNaN(amp1)) || (amp1 == 0.0)) {
+		
 				dirsx = (sx - dirsx) ;
 				dirsy = (sy - dirsy) ;
-			}
+				dirsz = (sz - dirsz) ;
+
 
 //amp1 = 0;
-dirsx = 0;
-dirsy = 0;
+//dirsx = 0;
+//dirsy = 0;
+//dirsz = 0;
 
 // Temperate the imact of sport forced position
 //dirsx/=10;
 //dirsy/=10;
-
+//dirsz/=10;
 //amp = 0;
-//dirx = 0.0;
-//diry = 0.0;
+dirx = 0.0;
+diry = 0.0;
+dirz = 0.0;
 
-
-			let new_speed = Math.sqrt( (dirx+dirsx)*(dirx+dirsx) + (diry+dirsy)*(diry+dirsy) ); 
+			let new_speed = Math.sqrt( (dirx+dirsx)*(dirx+dirsx) + (diry+dirsy)*(diry+dirsy) + (dirz+dirsz)*(dirz+dirsz) );	 
 			//speed = 10*this.mapCoords[j].speed*timeBetweenCalls;///new_speed;
 
-			speed = this.mapCoords[j].speed;//*timeBetweenCalls;
+			//speed = this.mapCoords[j].speed;//*timeBetweenCalls;
 
 			//speed -= Math.sin(new_speed)*0.1*Math.sign(new_speed)*timeBetweenCalls/(new_speed);					
-			//speed = timeBetweenCalls/(new_speed);
-			//speed = -1000 * timeBetweenCalls*(new_speed);
+			//speed = -30*timeBetweenCalls/(new_speed*new_speed);
+			//speed = -0.2*timeBetweenCalls/(Math.sin(new_speed)); 
+			//speed = -0.003 * timeBetweenCalls*(Math.sqrt(new_speed));
 			//new_speed = amp;
 			
 			speed =  -40*timeBetweenCalls/(new_speed) ;/// (new_speed);  // VL - plasma implosion
@@ -1091,9 +1122,11 @@ dirsy = 0;
 			//OV, VL
 			dispx = this.mapCoords[j].directionx * speed ;
 			dispy = this.mapCoords[j].directiony * speed ;
+			dispz = this.mapCoords[j].directionz * speed ;
 
 			this.mapCoords[j].directionx = (dirx+dirsx) ;/// new_direction vector; // VL
 			this.mapCoords[j].directiony = (diry+dirsy) ;/// new_direction vector;  // VL
+			this.mapCoords[j].directionz = (dirz+dirsz) ;/// new_direction vector;  // VL
 
 			// OV
 			//this.mapCoords[j].directionx = (dirx+dirsx) / new_speed;  
@@ -1101,31 +1134,25 @@ dirsy = 0;
 	
 			sx = sx + dispx ;// VL //*Math.sin((this.totalelapsed/100.0)) + sx%30*speedx*Math.cos(sx/j%20.0)/6 ;
 			sy = sy + dispy ;// VL //*Math.sin(sy/(2*j%10.0) +(this.totalelapsed/170.0)) + sy%30*speedx*Math.cos(sy/j%20.0)/6;
-			
+			sz = sz + dispz ;// VL //*Math.sin(sz/(2*j%10.0) +(this.totalelapsed/170.0)) + sz%30*speedx*Math.cos(sz/j%20.0)/6;
 			// OV
 			//sx = sx + dispx * timeBetweenCalls;
 			//sy = sy + dispy * timeBetweenCalls;
-			
-
-
 
 			// Update with the new parameters
 
-			sz = positionAttribute.getZ(_index);
+			//sz = positionAttribute.getZ(_index);
 			positionAttribute.setXYZ(_index, sx, sy, sz);
 			this.mapCoords[j].speed = speed;
+
 			// this is actually useles
 			this.mapCoords[j].sx = sx;
 			this.mapCoords[j].sy = sy;
 			this.mapCoords[j].sz = sz;
 
-
-
-
 			// debug coloring	- very ugly		
 			if (this.mapCoords[j].type == 1000){
-				colorAttr.setXYZ( _index,  1.0, 0.1, 0.1  );
-				
+				colorAttr.setXYZ( _index,  0.2, 0.1, 0.1  );				
 			}else{
 
 				if (this.mapCoords[j].type == 1001){
@@ -1134,7 +1161,7 @@ dirsy = 0;
 					//this.color.setHSL(this.mapCoords[j].type/this.activeMapCoords.length, 0.7 , 0.7 );
 					//colorAttr.setXYZ( _index,  this.color.r, this.color.g, this.color.b  );
 					var a = this.mapCoords[j];	
-					colorAttr.setXYZ( _index,  0.1, 0.1, 0.9  );
+					colorAttr.setXYZ( _index,  0.1, 0.1, 0.2  );
 				}
 			//colorAttr.setXYZ( _index,  this.color.r, this.color.g, this.color.b  );
 			}
@@ -1154,6 +1181,7 @@ dirsy = 0;
 		
 		sizesAttr.needsUpdate = true;
 		colorAttr.needsUpdate = true;
+
 		right_friendAttr0.needsUpdate = true;
 		right_friendAttr1.needsUpdate = true;
 		right_friendAttr2.needsUpdate = true;
@@ -1435,14 +1463,14 @@ dirsy = 0;
 					// if it a flat map point go for direct coordinates
 					// to do : obsolete all calculations for projection
 					//if (this.mapCoords[j].mode == 1)
-						let vdest_tmp = new THREE.Vector3(this.mapCoords[j].x,this.mapCoords[j].y,-100); 
+						let vdest_tmp = new THREE.Vector3(this.mapCoords[j].x,this.mapCoords[j].y,-100 + this.mapCoords[j].z); 
 						vdest = this.toScreenPosition(vdest_tmp, kx, ky);
 					}
 
 					// final data for particle system after projection
-					this.mapCoords[j].spotx = vdest.x;
-					this.mapCoords[j].spoty = vdest.y;
-					this.mapCoords[j].spotz = vdest.z;
+					//this.mapCoords[j].spotx = vdest.x;
+					//this.mapCoords[j].spoty = vdest.y;
+					//this.mapCoords[j].spotz = vdest.z;
 					this.mapCoords[j].sx = vdest.x;
 					this.mapCoords[j].sy = vdest.y;
 					this.mapCoords[j].sz = vdest.z;
@@ -1456,13 +1484,14 @@ dirsy = 0;
 
 						//if (kx%this.prjMapData.x == 2 && ky%this.prjMapData.y == 2){
 						if ((kx > 0 && kx<this.prjMapData.y - 1) && (ky > 0 && ky<this.prjMapData.x - 1)){
-							colorAttr.setXYZ( vindex,  this.color.r, this.color.g, this.color.b  );
+							colorAttr.setXYZ( vindex,  this.color.r, this.color.r, this.color.r  );
 							//colorAttr.setXYZ( vindex,  0.9, 0.1, 0.1  );
 							right_friendAttr0.setXYZ( vindex, this.rfcolor.r,kx, ky );
 							right_friendAttr1.setXYZ( vindex, Math.sin(vdest.x*Math.PI/this.prjMapData.square_size_x)*0.4,Math.cos(Math.PI*vdest.y*0.5/this.prjMapData.square_size_y), 0 );
 
 						}else{
-							colorAttr.setXYZ( vindex,  0.1, 0.1, 0.9  );
+							//colorAttr.setXYZ( vindex,  0.1, 0.1, 0.9  );
+							colorAttr.setXYZ( vindex,  0.6, 0.9, 0.9  );
 							right_friendAttr0.setXYZ( vindex, this.rfcolor.r,kx, ky );
 							right_friendAttr1.setXYZ( vindex, Math.sin(vdest.x*Math.PI/this.prjMapData.square_size_x)*0.4,Math.cos(Math.PI*vdest.y*0.5/this.prjMapData.square_size_y), 0 );
 
@@ -1488,7 +1517,7 @@ dirsy = 0;
 						this.right_friend4.push( this.rfcolor.r,kx, ky );
 
 						this.colors.push( 0.9, 0.1, 0.1 );	
-						let vcolor = 20;
+						let vcolor = 30;
 						let x = (vindex+n)%(2*vcolor);
 						if (x>vcolor) x = (vcolor - x%vcolor);						
 
@@ -1838,6 +1867,7 @@ dirsy = 0;
 
 			this.mapCoords[i].spotx = this.R * Math.cos(this.mapCoords[i].theta) * Math.cos(this.mapCoords[i].fi);
 			this.mapCoords[i].spoty = this.R * Math.cos(this.mapCoords[i].theta) * Math.sin(this.mapCoords[i].fi);
+			this.mapCoords[i].spotz = this.R * Math.cos(this.mapCoords[i].theta+this.mapCoords[i].fi);
 			//this.mapCoords[i].z = this.R * Math.sin(this.mapCoords[i].theta);
 
 
@@ -1910,6 +1940,7 @@ dirsy = 0;
 			const real_x = this.mapCoords[real_j].sx;
 			const real_y = this.mapCoords[real_j].sy;
 			const real_z = this.mapCoords[real_j].sz;
+
 			const orig = this.mapCoords[real_j];
 
 			const origin_vec = new THREE.Vector3(real_x,real_y,z);		
@@ -1917,7 +1948,7 @@ dirsy = 0;
 			this.mapCoords[real_j].friends.forEach((_friendaindex, k) => {				
 				points.push (origin_vec);
 				const real_friend = this.mapCoords[this.activeMapCoords[_friendaindex].j];
-				const friend_vec = new THREE.Vector3(real_friend.sx,real_friend.sy,z);
+				const friend_vec = new THREE.Vector3(real_friend.sx,real_friend.sy,real_friend.sz);
 				points.push (friend_vec);		
 			});
 
@@ -1927,7 +1958,7 @@ dirsy = 0;
 			this.friends_group.add(line);			
 
 			// line between sx and favgx
-			const favg_vec = new THREE.Vector3(orig.favgx,orig.favgy,z);
+			const favg_vec = new THREE.Vector3(orig.favgx,orig.favgy,orig.favgz);
 			points1.push (origin_vec);
 			points1.push (favg_vec);
 		}

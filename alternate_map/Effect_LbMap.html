@@ -15,7 +15,7 @@
 	<body>
 		<canvas class="webgl"></canvas>
 
-		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a>  BL Map Version v0.961<br/>
+		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a>  BL Map Version v0.97<br/>
 		<b>O</b> orthographic <b>P</b> perspective <b>H</b> <b>hide title </b>
 		</div>
 
@@ -64,8 +64,8 @@
 
 				//gl_PointSize = 1.0 * size * ( 300.0 / -mvPosition.z );
 				// increase the size of the points
-				//gl_PointSize = 1.0 * size *(1.0 + 1.0 * vRightFriend1.x* vRightFriend1.y/50.0);//* ( 300.0 / -mvPosition.z );
-				gl_PointSize = 4.0 * size *(2.0 + 1.0 * vRightFriend1.x* vRightFriend1.y/20.0);//* ( 300.0 / -mvPosition.z );
+				gl_PointSize = 4.0 * size *(1.2 + 1.0 * vRightFriend1.x* vRightFriend1.y/30.0);//* ( 300.0 / -mvPosition.z );
+				//gl_PointSize = 4.0 * size *(2.0 + 1.0 * vRightFriend1.x* vRightFriend1.y/20.0);//* ( 300.0 / -mvPosition.z );
 				//gl_PointSize = 0.8 * size *(2.0 + 1.0 * vRightFriend1.x* vRightFriend1.y/20.0);//* ( 300.0 / -mvPosition.z );
 				//gl_PointSize =  10.0f;
 				//gl_PointSize = gl_PointSize*100.0	;
@@ -115,7 +115,7 @@
 				//gl_FragColor = gl_FragColor * (((-0.5+gl_PointCoord.x)*(-0.5+gl_PointCoord.x) + (-0.5+gl_PointCoord.y)*(-0.5+gl_PointCoord.y)))/1.0 + vec4(vRightFriend*0.5, 1.0);
 				//gl_FragColor = gl_FragColor * (((-0.5+gl_PointCoord.x)*(-0.5+gl_PointCoord.x) + (-0.5+gl_PointCoord.y)*(-0.5+gl_PointCoord.y)))/1.0 + vec4(vRightFriend*0.5, 0.1);
 				//gl_FragColor =   texture2D( pointTexture, gl_PointCoord );
-				//gl_FragColor =  gl_FragColor;// + gl_FragColor * vec4(vRightFriend1,1.0)/10.0;
+				//gl_FragColor = gl_FragColor * vec4(vec3(0.1,0.1,0.1),1.0);///2.0;
 
 
 			}
@@ -384,17 +384,20 @@ function getFlatObjectString(entry) {
 			let show_camhelper = true;
 			let go_auto = false;
 			let camera_update = false;
-
 			let hide_sphere = false;
-
 			let clear_color = true;
 			let clear_depth = true;
-
 			let move_map = false;
-
-
 			let lbMap;
 			let autofit = false;
+
+			let hide_squares = true;
+			let hide_delaunay = true;
+			let rotate_squares = true;
+			let render_delaunay_wireframe = true;		
+			
+			let default_friends = 15;
+			let default_proximity = 25;
 
 			let R = 100;
 
@@ -423,9 +426,50 @@ function getFlatObjectString(entry) {
 			let paddingPercentHorizontal = 0.2;
 			let paddingPercentVertical = 0.2;
 
+///
+/// Here is where we set the daefaults cartridge
+///
+///
+				show_camhelper = true;
+				go_auto = false;
+				camera_update = false;
+				hide_sphere = true;
+				clear_color = true;
+				clear_depth = true;
+				move_map = true;
+				autofit = false;
+				hide_squares = true;
+				hide_delaunay = true;
+				rotate_squares = true;
+				render_delaunay_wireframe = true;
+				default_friends = 25;
+				default_proximity = 25;
 
 			init();
-			animate();
+			setPostDefaults();	
+
+			generator.step(10.0/60);				
+			updateEffectsController();
+
+			lbMap.factory();
+			lbMap.ReGenerateMap(true);
+			animate();			
+			onWindowResize();
+
+			generateProjectionMap(true);
+
+			function setPostDefaults(){
+				// hide HUD				
+				hdiv.style.display = "none";
+				//gui.show(0);
+				statspanel.style.display = "none";	
+
+				gui.show(0);
+				statspanel.style.display = "none";	
+
+
+			}
+
 
 			// the sphere
 			function init() {
@@ -492,7 +536,11 @@ function getFlatObjectString(entry) {
 				vnh = new VertexNormalsHelper( mesh, 5 );
 				// adding helpers on the mesh
 				mesh.add(vnh);
-				cameraRig.add( mesh );
+
+				if (!hide_sphere)
+					cameraRig.add( mesh );
+
+
 				mesh.position.z = -150;
 				mesh.position.y = 150;				
 			
@@ -511,11 +559,18 @@ function getFlatObjectString(entry) {
 				mesh3.position.z = 150;
 
 				//cameraRig.add( mesh3 );
-				cameraRig.add( meshstop );
+				if (!hide_sphere)
+					cameraRig.add( meshstop );
 
 				lbMap = new LbMap(scene, mesh, meshstop, R,2*Math.PI/5.0,2*Math.PI/5.0,100,100,1,1,1.0,1.0, Math.PI, Math.PI);
 				lbMap.setScrSize(-0.5 * frustumSize * aspect * scrrapmap, 
 				frustumSize*scrrapmap );
+				// mandatory here
+				lbMap.hide_squares = hide_squares;
+				lbMap.hide_delaunay = hide_delaunay;
+				lbMap.rotate_squares = rotate_squares;
+				lbMap.render_delaunay_wireframe = rotate_squares;
+
 				lbMap.init();	
 								
 				lbMap.factory();
@@ -528,12 +583,17 @@ function getFlatObjectString(entry) {
 				getObjectsCountFlat().then(count => {
 					console.log("Count Async: " + count);
 					objCountFlat = count;
+
+					const objIdFlat = Math.floor(Math.random() * objCountFlat);
+					console.log("Random Object " + objIdFlat + " of : " + objCountFlat);
+					pullRemoteObjectFlat (objIdFlat);
 				});
+
 				//mapRawData = getObjectString(9); // this is Argentina
 				// 153 antarctica
 				// 9 argentina
 				// 132 australia
-				pullRemoteObject (133);
+				// pullRemoteObject (133);
 
 				//lbMap.loadRandomMap();
 				//lbMap.rebuildMapData();						
@@ -543,11 +603,15 @@ function getFlatObjectString(entry) {
 				renderer = new THREE.WebGLRenderer( {canvas, preserveDrawingBuffer: true , antialias: true } );
 				
 				renderer.setPixelRatio( window.devicePixelRatio );
-				//renderer.setSize( SCREEN_WIDTH * (1.0-paddingPercentHorizontal), 
+//				renderer.setSize( SCREEN_WIDTH * (1.0-paddingPercentHorizontal), 
+//				SCREEN_HEIGHT * (1.0 - paddingPercentVertical));
+
+				//renderer.setSize( SCREEN_WIDTH , 
 				//SCREEN_HEIGHT * (1.0 - paddingPercentVertical));
 
-				renderer.setSize( SCREEN_WIDTH , 
-				SCREEN_HEIGHT * (1.0 - paddingPercentVertical));
+				renderer.setSize(SCREEN_WIDTH-10, SCREEN_HEIGHT-10);
+				//renderer.setSize( SCREEN_WIDTH , 
+				//SCREEN_HEIGHT );
 
 				
 				container.appendChild( renderer.domElement );
@@ -569,7 +633,6 @@ function getFlatObjectString(entry) {
 				//controls = new TrackballControls( cameraOrtho,  renderer.domElement);  //				
 
 				gui = setupGui();
-
 
 				// prepare the generator
 				generator = new AttributeGenerator(attributes,lbMap);
@@ -646,8 +709,8 @@ function getFlatObjectString(entry) {
 					frustumSize: frustumSize,
 					newTess: 15,
 					autofit: lbMap.autofit,
-					friends: 30,
-					proximity: 20,
+					friends: default_friends,
+					proximity: default_proximity,
 					refriend: true,
 					scrrapmap: scrrapmap,
 					newShading: 'glossy',
@@ -874,13 +937,20 @@ function getFlatObjectString(entry) {
 				SCREEN_WIDTH = window.innerWidth;
 				SCREEN_HEIGHT = window.innerHeight;
 				aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
+				//aspect = SCREEN_WIDTH * (1.0- paddingPercentHorizontal) / SCREEN_HEIGHT * (1.0-paddingPercentVertical);				
 
-				renderer.setSize( SCREEN_WIDTH * (1.0- paddingPercentHorizontal), SCREEN_HEIGHT * (1.0-paddingPercentVertical) );
+				///renderer.setSize( SCREEN_WIDTH * (1.0- paddingPercentHorizontal), SCREEN_HEIGHT * (1.0-paddingPercentVertical) );
 
-				camera.aspect = 0.5 * aspect;
+								    // Update renderer
+				renderer.setSize(SCREEN_WIDTH-10, SCREEN_HEIGHT-10);
+				//renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+				//camera.aspect = 0.5 * aspect;
+				camera.aspect = aspect;
 				camera.updateProjectionMatrix();
 
-				cameraPerspective.aspect = 0.5 * aspect;
+				//cameraPerspective.aspect = 0.5 * aspect;
+				cameraPerspective.aspect = 0.5 *aspect;
 				cameraPerspective.updateProjectionMatrix();
 
 				cameraOrtho.left = hrap * frustumSize * aspect / -2;
@@ -893,7 +963,7 @@ function getFlatObjectString(entry) {
 				//lbMap.updateMap();
 				//lbMap.updateWindows();
 				
-				console.log("____________________");
+				console.log("______WINDOW RESIZE______________" + SCREEN_WIDTH + " SH: " + SCREEN_HEIGHT);
 
 				lbMap.ReGenerateMap(false);
 
@@ -952,8 +1022,10 @@ function getFlatObjectString(entry) {
 					hide_sphere = effectController.hide_sphere;
 					if (hide_sphere){
 						cameraRig.remove( mesh );
+						cameraRig.remove( meshstop );
 					} else {
 						cameraRig.add( mesh );
+						cameraRig.add( meshstop );
 					}
 				}
 
@@ -971,22 +1043,20 @@ if (go_auto){
 				updateEffectsController();
 
 				if (lbMap.autofit){
-							lbMap.window_w = lbMap.theta_cover*R/lbMap.winxcnt;
-							lbMap.window_h = lbMap.phi_cover*R/lbMap.winycnt;
+					lbMap.window_w = lbMap.theta_cover*R/lbMap.winxcnt;
+					lbMap.window_h = lbMap.phi_cover*R/lbMap.winycnt;
 
-							lbMap.Vstep = lbMap.theta_cover/lbMap.winxcnt;
-							lbMap.Hstep = lbMap.phi_cover/lbMap.winycnt;
+					lbMap.Vstep = lbMap.theta_cover/lbMap.winxcnt;
+					lbMap.Hstep = lbMap.phi_cover/lbMap.winycnt;
 
+					effectController.winSizeH = lbMap.window_h;
+					effectController.winSizeW = lbMap.window_w;
 
-							effectController.winSizeH = lbMap.window_h;
-							effectController.winSizeW = lbMap.window_w;
+					effectController.hstep = lbMap.Hstep;
+					effectController.vstep = lbMap.Vstep;
 
-							effectController.hstep = lbMap.Hstep;
-							effectController.vstep = lbMap.Vstep;
-
-							//gui.update();
-							//console.log ("autofit");						
-
+					//gui.update();
+					//console.log ("autofit");						
 				}
 
 				lbMap.factory();
@@ -1116,7 +1186,7 @@ if (go_auto){
 
 				} else {
 
-					cameraOrtho.far = mesh3.position.length()*2;
+					cameraOrtho.far = mesh3.position.length()*5;
 					cameraOrtho.updateProjectionMatrix();
 
 					cameraOrthoHelper.update();
@@ -1136,17 +1206,32 @@ if (go_auto){
 
 				activeHelper.visible = false;
 
-				//renderer.setViewport( 0, 0, SCREEN_WIDTH / 2, SCREEN_HEIGHT );
-				renderer.setViewport( (paddingPercentHorizontal/ 2.0) * SCREEN_WIDTH , 0,  SCREEN_WIDTH * (1.0-paddingPercentHorizontal) , 0.6 * SCREEN_HEIGHT);				
+				//renderer.setViewport( 0, 0, SCREEN_WIDTH , SCREEN_HEIGHT );
+				//renderer.setViewport( 0, 0, SCREEN_WIDTH  * (1.0-paddingPercentHorizontal) , SCREEN_HEIGHT * (1.0-paddingPercentVertical) );
+				/*
+				renderer.setViewport( 
+							(paddingPercentHorizontal/ 2.0) * SCREEN_WIDTH , 
+							(paddingPercentVertical/ 2.0) * SCREEN_HEIGHT,  
+							SCREEN_WIDTH * (1.0-paddingPercentHorizontal) , 
+							SCREEN_HEIGHT * (1.0-paddingPercentVertical));				
+				*/							
 
-				renderer.render( scene, activeCamera );
+
 
 				if (show_camhelper){
+					renderer.setViewport( 0, 0, SCREEN_WIDTH / 2, SCREEN_HEIGHT );
+					renderer.render( scene, activeCamera );
+
 					activeHelper.visible = true;
+					renderer.setViewport( SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2, SCREEN_HEIGHT );
+					renderer.render( scene, camera );
+				}else{
+					renderer.setViewport( 0, 0, SCREEN_WIDTH - 10, SCREEN_HEIGHT -10 );
+					renderer.render( scene, activeCamera );				
+					console.log("______UPDATE_EF_CNTRL______________" + SCREEN_WIDTH + " SH: " + SCREEN_HEIGHT);
 				}
 
-				renderer.setViewport( SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2, SCREEN_HEIGHT );
-				renderer.render( scene, camera );
+				
 			}
 
 
