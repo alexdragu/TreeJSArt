@@ -2,6 +2,11 @@ const express = require('express');
 const cors = require('cors');
 const https = require('https')
 const fs = require("fs");
+const MQTTSubscriber = require('./mqtt_subscriber_node');
+//const mqttClient = new MQTTSubscriber('mqtt://broker.hivemq.com');
+//const mqttClient = new MQTTSubscriber('mqtt://localhost:1883');
+const mqttClient = new MQTTSubscriber('mqtt://192.168.0.39:1883');
+const WebSocket = require('ws');
 
 var privateKey  = fs.readFileSync('./sslcert/id.key', 'utf8');
 var certificate = fs.readFileSync('./sslcert/id.crt', 'utf8');
@@ -36,6 +41,13 @@ class ObjectEntry {
     this.coordinates = coordinates;
   }
 }
+
+mqttClient.connect();
+console.log('Starting MQTT subscriber...');
+
+mqttClient.subscribe('test/topic', (msg) => {
+    console.log('Received message:', msg);
+});
 
 console.log('Loading sphere images...');
  
@@ -129,19 +141,78 @@ app.get('/get_entry', (req, res) => {
 });
 
 app.get('/get_flat_entry', (req, res) => {
-  const objEntry = req.query.obj_entry;
+  const objEntry = req.query.obj_entry;  
   const responseObj = { name: `${objFlatData[objEntry].name}` , coordinates: `${objFlatData[objEntry].coordinates}`};
   res.json(responseObj);
 });
+
+app.get('/get_mqtt_uwb', (req, res) => {
+  const objEntry = mqttClient.getlastmessage();
+  const responseObj = { data: `${objEntry}`, index: `${mqttClient._messageIndex}` };  
+  res.json(responseObj);
+});
+
 
 // Listen to the App Engine-specified port, or 8080 otherwise
 //const PORT = process.env.PORT || 8082;
 const PORT = 30001;
 const hostname = 'interactivedigital.ro';
 
-https.createServer(credentials, app).listen(PORT);
+const server = https.createServer(credentials, app).listen(PORT);
 //app.listen(PORT, () => {
 //  console.log(`Server listening on port ${PORT}...`);
 //});
 
+const wss = new WebSocket.Server({ server });
 
+wss.on('connection', (ws) => {
+  console.log('WS Client connected');
+
+  const interval = setInterval(() => {
+    //ws.send(JSON.stringify({ time: new Date().toISOString() }));
+    
+    const objEntry = mqttClient.getlastmessage();
+    //console.log('WS Sending data:', objEntry);
+
+    const arr = JSON.parse(objEntry);/* your 2D array */
+    //console.log('WS ARRAY Sending data:', objEntry);
+    if(objEntry === undefined || objEntry === null) {
+      console.error('Received undefined or null data');
+      return;
+    }
+
+    console.log('WS ARRAY String len:', objEntry.length);
+
+    if (!arr || !Array.isArray(arr) || arr.length === 0) {
+      console.error('Invalid or empty array received');
+      return;
+    }
+    const flatArr = arr.flat(); // Flattens to 1D array
+
+    // Create a Uint16Array and fill it
+    const uint16 = new Uint16Array(flatArr);
+
+    // Convert to ArrayBuffer for sending as binary
+    const buffer = uint16.buffer;
+
+    console.log('WS Sending buffer length:', buffer.byteLength);
+    //console.log('WS Sending buffer XXX:', buffer);
+
+    ws.send(buffer, { binary: true }, (error) => {
+      if (error) {
+        console.error('Error sending data:', error);
+      }
+    });
+    //ws.send(JSON.stringify({ objEntry }));
+
+  }, 30);
+
+  ws.on('close', () => {
+  console.log('WS Client disconnected');
+    clearInterval(interval);
+  });
+});
+
+wss.on('error', (error) => {
+  console.error('WebSocket error:', error);
+});
