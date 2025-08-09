@@ -69,7 +69,7 @@ class HeightMesh {
         this.h_factor = h_factor;
         this.nx = nx ;
         this.ny = ny ;
-        
+
         const vertices = [];
         const uvs = [];
         const colors = [];
@@ -81,7 +81,7 @@ class HeightMesh {
                 const x = i * xstep - ((nx-1) * xstep) / 2; // Center the mesh
                 const y = j * ystep - ((ny-1) * ystep) / 2; // Center the mesh
                 const h = heights[i][j];
-                const z = h * h_factor;
+                const z = 0;
 
                 //vertices.push(x, y, z);
                 //uvs.push(i / (nx - 1), j / (ny - 1));
@@ -139,7 +139,8 @@ class HeightMesh {
         //this.material.transparent = false;
         //this.material.opacity = 1.0;
 
-        
+        this.geometry.computeVertexNormals();
+
         this.mesh = new THREE.Mesh(this.geometry, this.material);
         this.renderGroup.add(this.mesh);
     }
@@ -275,28 +276,34 @@ class HeightMesh {
         for (let i = 0; i < this.nx; i++) {
             for (let j = 0; j < this.ny; j++) {
                 const h = this.heights[i][j]*this.h_factor;
+                const h1 = this.heights[i][j];
                 
                 pos.setZ(idx, h);
                 const colorVal = (h - 0) / (10 - 0); // assuming min=0, max=10
                 col.setXYZ( idx,  colorVal, 0.5, 1 - colorVal  );
                 //colors.push(colorVal, 0.5, 1 - colorVal); // RGB
+
+                //col.setXYZ( idx,  this.redpalette[h1], this.greenpalette[h1], this.bluepalette[h1] );
+
                 idx++;
             }
         }
         pos.needsUpdate = true;
         col.needsUpdate = true;
-        this.geometry.computeVertexNormals();
+//        this.geometry.computeVertexNormals();
     }
 
     updateUWBArray(arri) {
+        
         const pos = this.geometry.getAttribute('position');
         const col = this.geometry.getAttribute('color');
 
         let idx = 0;
-        
+
+
         for (let i = 0; i < this.nx; i++) {
             for (let j = 0; j < this.ny; j++) {
-                //const h = this.heights[i][j]*this.h_factor;
+/*
                 const h = arri[i*this.ny+j]*this.h_factor;
                 pos.setZ(idx, h);
 
@@ -304,16 +311,62 @@ class HeightMesh {
                 //col.setXYZ( idx,  colorVal, 0.5, 1 - colorVal  );
 
                 col.setXYZ( idx,  this.redpalette[arri[i*this.ny+j]], this.greenpalette[arri[i*this.ny+j]], this.bluepalette[arri[i*this.ny+j]] );
+*/
+                pos.setZ(idx, arri[idx]*this.h_factor);
+                col.setXYZ( idx,  this.redpalette[arri[idx]], this.greenpalette[arri[idx]], this.bluepalette[arri[idx]] );                
 
 
-
+                //const colorVal = (h - 0) / (10 - 0); // assuming min=0, max=10                
+                //col.setXYZ( idx,  colorVal, 0.5, 1 - colorVal  );
+                
                 idx++;
             }
         }
+
         pos.needsUpdate = true;
         col.needsUpdate = true;
-        this.geometry.computeVertexNormals();
+       // this.geometry.computeVertexNormals();
+
     }
+
+      updateAudioArray(arri) {
+        
+        const pos = this.geometry.getAttribute('position');
+        const col = this.geometry.getAttribute('color');
+
+        let idx = 0;
+
+
+        for (let i = 0; i < this.nx; i++) {
+            for (let j = 0; j < this.ny; j++) {
+/*
+                const h = arri[i*this.ny+j]*this.h_factor;
+                pos.setZ(idx, h);
+
+                const colorVal = (h - 0) / (10 - 0); // assuming min=0, max=10                
+                //col.setXYZ( idx,  colorVal, 0.5, 1 - colorVal  );
+
+                col.setXYZ( idx,  this.redpalette[arri[i*this.ny+j]], this.greenpalette[arri[i*this.ny+j]], this.bluepalette[arri[i*this.ny+j]] );
+*/
+                pos.setZ(idx, arri[idx]*this.h_factor);
+                //col.setXYZ( idx,  this.redpalette[arri[idx]], this.greenpalette[arri[idx]], this.bluepalette[arri[idx]] );                
+
+                const h = arri[i*this.ny+j]*this.h_factor;
+                const colorVal = (h - 0) / (10 - 0); // assuming min=0, max=10                
+                col.setXYZ( idx,  colorVal, 0.5, 1 - colorVal  );
+                
+                idx++;
+            }
+        }
+
+        pos.needsUpdate = true;
+        col.needsUpdate = true;
+       // this.geometry.computeVertexNormals();
+
+    }
+
+
+
 
     /**
      * Add the mesh to the scene

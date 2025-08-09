@@ -1,0 +1,18 @@
+{
+  "name": "services",
+  "version": "1.0.0",
+  "description": "aservices for graphics lib",
+  "main": "serve.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Alex Dragu",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "csv-parse": "^5.5.3",
+    "express": "^4.18.2",
+    "formidable": "^3.5.4",
+    "mqtt": "^5.13.2"
+  }
+}

@@ -106,8 +106,8 @@ Stats.Panel = function ( name, name1, name2,name3,name4, fg, bg ) {
 
 	var min = Infinity, max = 0, round = Math.round;
 	var PR = round( window.devicePixelRatio || 1 );
-	var absHeight = 150;
-	var absWidth = 220;
+	var absHeight = 120;
+	var absWidth = 80;
 	var WIDTH = absWidth * PR, HEIGHT = absHeight * PR,
 		TEXT_X = 3 * PR, TEXT_Y = 2 * PR,
 		GRAPH_X = 3 * PR, GRAPH_Y = 15 * PR,

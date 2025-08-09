@@ -20,6 +20,7 @@ var credentials = {key: privateKey, cert: certificate};
 */
  const corsOptions = {
   origin: 'https://localhost:30002',//(https://your-client-app.com)
+  //origin: 'https://192.168.0.87:30002',
   optionsSuccessStatus: 200,
 };
 
@@ -165,6 +166,10 @@ const server = https.createServer(credentials, app).listen(PORT);
 
 const wss = new WebSocket.Server({ server });
 
+let idxws = 0;
+let totalidx = 0;
+let rep = new Date().getTime();
+
 wss.on('connection', (ws) => {
   console.log('WS Client connected');
 
@@ -194,18 +199,30 @@ wss.on('connection', (ws) => {
 
     // Convert to ArrayBuffer for sending as binary
     const buffer = uint16.buffer;
+    if (idxws<100) {
+      
+    } else{
 
-    console.log('WS Sending buffer length:', buffer.byteLength);
+      if ((idxws >= 100) && (new Date().getTime() - rep > 1000)){
+        console.log('WS Sending buffer length:', buffer.byteLength, " idxws : ", idxws, " tidxws:",totalidx," time in ms:", new Date().getTime() - rep);      
+        idxws=0;
+        rep = new Date().getTime();
+      }
+//      console.log('Denied idxws : ', idxws);
+//      return;
+    }
     //console.log('WS Sending buffer XXX:', buffer);
-
+    idxws++;
+    totalidx++;
     ws.send(buffer, { binary: true }, (error) => {
       if (error) {
         console.error('Error sending data:', error);
       }
     });
+    //console.log("sending: ",idxws); 
     //ws.send(JSON.stringify({ objEntry }));
 
-  }, 30);
+  }, 10);
 
   ws.on('close', () => {
   console.log('WS Client disconnected');
