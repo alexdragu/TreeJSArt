@@ -177,6 +177,12 @@ class LbMap {
 	// Varying parameters
 	//loco = 0; // 0 - 1
 
+	// Find friends sequence
+	ff_current = 0;
+	ff_start = 0;
+	ff_end = 0;
+	ff_step = 20;
+
 
 	constructor(scene,object, object_still ,R, Vstep, Hstep, window_w, window_h, winxcnt ,winycnt ,fact ,mag, phi_cover, theta_cover){
 		this.scene = scene;
@@ -574,6 +580,27 @@ class LbMap {
 
 	}
 
+	seqSetFriends(fcount,tolerance){
+
+		if (this.ff_current + this.ff_step > this.activeMapCoords.length)
+			this.ff_end = this.activeMapCoords.length;
+		else
+			this.ff_end = this.ff_current + this.ff_step;
+
+		for ( var k = this.ff_current; k < this.ff_end; k++ ) {
+			this.setFriends_(fcount,k,tolerance);			
+		}
+
+
+		this.ff_current = this.ff_end;
+		if (this.ff_current == this.activeMapCoords.length){
+			this.ff_current = 0;
+			console.log("ff_current " + this.ff_current + " ff_end " + this.ff_end + " ff_step " + this.ff_step);	
+
+		}
+
+	}
+
 	setFriends_(fcount,i,tolerance) {
 		var fmin = 10000;
 
@@ -962,7 +989,8 @@ class LbMap {
 		this.timevarry(timeBetweenCalls);
 
 		if (refriend)
-			this.setFriends(fcount,0,proximity);
+			//this.setFriends(fcount,0,proximity);
+			this.seqSetFriends(fcount,proximity);
 
 		this.friendsSet = true;		
 
