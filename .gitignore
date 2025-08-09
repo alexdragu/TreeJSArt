@@ -1,0 +1,6 @@
+# Exclude specific folders
+.vscode/
+services/node_modules/
+power_atols/node_modules/
+particles01/node_modules/
+
