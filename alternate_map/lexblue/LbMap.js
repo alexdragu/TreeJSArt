@@ -93,8 +93,6 @@ class ProjectionMapData {
 		this.window_w = window_w;
 		this.window_h = window_h;
 	}
-
-
 }
 
 class LbMap {
@@ -571,17 +569,13 @@ class LbMap {
 		}
 	}
 
-
 	setFriends(fcount,i,tolerance){
-
 		for ( var k = i; k < this.activeMapCoords.length; k++ ) {
 			this.setFriends_(fcount,k,tolerance);
 		}
-
 	}
 
 	seqSetFriends(fcount,tolerance){
-
 		if (this.ff_current + this.ff_step > this.activeMapCoords.length)
 			this.ff_end = this.activeMapCoords.length;
 		else
@@ -591,14 +585,12 @@ class LbMap {
 			this.setFriends_(fcount,k,tolerance);			
 		}
 
-
 		this.ff_current = this.ff_end;
 		if (this.ff_current == this.activeMapCoords.length){
 			this.ff_current = 0;
 			console.log("ff_current " + this.ff_current + " ff_end " + this.ff_end + " ff_step " + this.ff_step);	
 
 		}
-
 	}
 
 	setFriends_(fcount,i,tolerance) {
@@ -658,13 +650,6 @@ class LbMap {
 			+ (a.sy-b.sy)* (a.sy-b.sy) + (a.sz-b.sz)* (a.sz-b.sz));
 
 			a.type = 10;
-
-			// do not evaluate as friend but within tolerance
-			//if (aDistance > tolerance)
-			//		continue;
-
-			//if (i==this.show_friend_idx)
-			//	console.log ("Compare i" + i + " with j " + k + " " + aDistance + " fmin " + fmin + " tol: " + tolerance) ;
 
 			// if within the already existing friends
 			if ((aDistance<fmin) && (aDistance < tolerance)){ 
@@ -781,88 +766,6 @@ class LbMap {
 		return distance;
 	}
 
-	setFriends2(fcount) {
-
-		let MapCoordsOrdered = [...this.mapCoords];
-		//let MapCoordsOrdered = this.mapCoords.clone(); // Cloning the mapCoords array
-		
-		// order by sqrt(fi^2 + theta^2)
-		// fi and theta should be recomputed for this to work
-		let mode = this.friend_mode; 
-
-		if (mode==0){
-			MapCoordsOrdered.sort(function(a, b) {
-				const aDistance = Math.sqrt(a.fi * a.fi + a.theta * a.theta);
-				const bDistance = Math.sqrt(b.fi * b.fi + b.theta * b.theta);
-				return aDistance - bDistance;
-			});
-		}
-
-		// best
-		if (mode==1){
-			MapCoordsOrdered.sort(function(a, b) {
-				const aDistance = Math.sqrt(
-					(a.fi - b.fi) * (a.fi - b.fi) 
-					+ (a.theta - b.theta) * (a.theta - b.theta)
-					);
-				return aDistance ;
-			});
-		}
-
-		if (mode==2){
-			MapCoordsOrdered.sort(function(a, b) {
-				const aDistance = Math.sqrt((a.x-b.x)* (a.x-b.x) 
-									+ (a.y-b.y)* (a.y-b.y));
-				return aDistance ;
-			});
-		}
-
-		if (mode==3){
-			MapCoordsOrdered.sort(function(a, b) {
-				const aDistance = Math.sqrt(a.x * a.x + a.y * a.y);
-				const bDistance = Math.sqrt(b.x * b.x + b.y * b.y);
-				return aDistance - bDistance;
-			});
-		}
-
-		if (mode==4){
-			this.shuffleArray(MapCoordsOrdered);
-		}
-
-		MapCoordsOrdered.sort().forEach((coord, index) => {
-			const numPredecessors = Math.min(index, fcount);
-			coord.friends = [];
-			if (index%(fcount+1)==0){
-				// set friends for subject
-				for (let i = 0; i < numPredecessors; i++) {
-					coord.friends[i] = index - (i + 1);
-					coord.type = 1;
-					//console.log (" index: " + index + " coord.friends[i]: " + coord.friends[i]);
-				}
-				//console.log(coord.friends);
-				// set friends for friends
-
-				for (let i = 0; i < numPredecessors; i++) {
-					for (let j = 0; j < numPredecessors; j++) {
-						//coord.friends[i] = index - (i + 1);
-						if (coord.friends[i] != index){
-							MapCoordsOrdered[coord.friends[i]].friends[j] = coord.friends[j];						
-							MapCoordsOrdered[coord.friends[i]].type = index;
-						//	console.log (" Erase index: " + index + " coord.friends[i]: " + coord.friends[i] + " coord.friends[j]: " + coord.friends[j]);							
-						}else{
-
-						}
-					}
-				}
-
-			}
-
-		});
-
-		this.mapCoords = MapCoordsOrdered;
-		
-	}
-
 	friendsSet = false;
 	// we'll just update the mapCoords fi and theta
 	// Need to use this before projection
@@ -949,15 +852,12 @@ class LbMap {
 
 	}
 
-
 	// time varyiing global function
 	loco = 0;
 	locot = 0;
 
 	timevarry(timeBetweenCalls){
 		this.locot += timeBetweenCalls/4;
-		//this.loco = Math.sin(this.locot);
-		//console.log("timeBetweenCalls: " + timeBetweenCalls + " locot: " + this.locot + " loco" + this.loco);
 		return this.loco;
 	}
 
@@ -1687,15 +1587,9 @@ dirsz = 0;
 		vec.applyQuaternion( quaternion );	
 		console.log('Rotated vector:', vec);	
 */
-		
-
-
-
 
 		//const a = new THREE.Euler( this.defIndextheta, this.defIndexfi, 0, 'XYZ' );
 		//vec.applyEuler(a);
-
-
 		
 		quaternion1.setFromAxisAngle( new THREE.Vector3( -1, 0, 0 ), this.defIndexfi);		
 		//vec.applyQuaternion( quaternion );	
@@ -1757,8 +1651,6 @@ dirsz = 0;
 			}
 		}				
 	}
-
-
 
 	generateSquare(i,j,vstep,hstep, definndexh, defindexv){		
 						
@@ -1883,7 +1775,6 @@ dirsz = 0;
 		}				
 	}
 
-
 	loadRandomMap(){
 		// add another 1000 particles on the sphere
 		for ( let i = 0; i < 50; i ++ ) {					
@@ -1910,7 +1801,6 @@ dirsz = 0;
 	}
 
 	resetAuxDataMap(){
-	
 	}
 
 	updateMapCoords(tgmode = 0){
@@ -1926,8 +1816,6 @@ dirsz = 0;
 			this.mapCoords[i].spoty = this.R * Math.cos(this.mapCoords[i].theta) * Math.sin(this.mapCoords[i].fi);
 			this.mapCoords[i].spotz = this.R * Math.cos(this.mapCoords[i].theta+this.mapCoords[i].fi);
 			//this.mapCoords[i].z = this.R * Math.sin(this.mapCoords[i].theta);
-
-
 
 			//this.mapCoords[i].speed = Math.sin((this.fi+this.theta)/2.0)/4.0;
 			//this.mapCoords[i].directionx = 0.0;
