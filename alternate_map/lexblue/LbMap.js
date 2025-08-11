@@ -8,6 +8,7 @@ import {
 } from 'three';
 
 import * as THREE from 'three';
+import { PolygonCoordParser } from './PolygonCoordParser.js';
 
 
 //let mapCoordsRaw = [[1,1.4],[2,1.4],[2,0.4],[1,0.4]];
@@ -216,7 +217,7 @@ class LbMap {
 	parsePolygonCoords(polygonString, mode) {
 		// Remove the "POLYGON " prefix and split the string into polygons
 		//prefix may be POLYGON or MultyPolygon
-		
+/*		
 		const firstParenthesisPosition = polygonString.indexOf('(');
 		console.log ("Polygon type: " + mode);
 
@@ -246,8 +247,10 @@ class LbMap {
 		});
 	  
 		return mapCoordsArrays;
+*/
+		return PolygonCoordParser.parsePolygonCoords(polygonString, mode, this.R);
 	}
-
+		
 	init(){
 		
 		console.log(this.mapCoords);
@@ -1023,24 +1026,28 @@ class LbMap {
 			//let amp1 = Math.sqrt((sx-dirsx)*(sx-dirsx) + (sy-dirsy)*(sy-dirsy) + (sz-dirsz)*(sz-dirsz))
 			//if ((isNaN(amp1)) || (amp1 == 0.0)) {
 		
+				
 				dirsx = (sx - dirsx) ;
 				dirsy = (sy - dirsy) ;
 				dirsz = (sz - dirsz) ;
-
+				
 
 //amp1 = 0;
-dirsx = 0;
-dirsy = 0;
-dirsz = 0;
+// direction spot
+//dirsx = 0;
+//dirsy = 0;
+//dirsz = 0;
 
 // Temperate the imact of sport forced position
 //dirsx/=10;
 //dirsy/=10;
 //dirsz/=10;
 //amp = 0;
-//dirx = 0.0;
-//diry = 0.0;
-//dirz = 0.0;
+
+
+dirx = 0.0;
+diry = 0.0;
+dirz = 0.0;
 
 			let new_speed = Math.sqrt( (dirx+dirsx)*(dirx+dirsx) + (diry+dirsy)*(diry+dirsy) + (dirz+dirsz)*(dirz+dirsz) );	 
 			//speed = 10*this.mapCoords[j].speed*timeBetweenCalls;///new_speed;
@@ -1064,7 +1071,7 @@ dirsz = 0;
 			//speed -= 0.2* timeBetweenCalls*(new_speed);
 			
 			// OV
-			speed = -1000* timeBetweenCalls*(new_speed);  // this is ok
+			speed = -100.010* timeBetweenCalls*(new_speed);  // this is ok
 
 			// OV
 			//speed = 400*(-1+Math.sin(this.mapCoords[j].type)/2.0)*timeBetweenCalls*(new_speed);  // this is ok
@@ -1075,22 +1082,22 @@ dirsz = 0;
 			dispz = this.mapCoords[j].directionz * speed ;
 
 			// RVL
-			/*
-			this.mapCoords[j].directionx = (dirx+dirsx) ;/// new_direction vector; // VL
-			this.mapCoords[j].directiony = (diry+dirsy) ;/// new_direction vector;  // VL
-			this.mapCoords[j].directionz = (dirz+dirsz) ;/// new_direction vector;  // VL
-			*/
+			
+			//this.mapCoords[j].directionx = (dirx+dirsx) ;/// new_direction vector; // VL
+			//this.mapCoords[j].directiony = (diry+dirsy) ;/// new_direction vector;  // VL
+			//this.mapCoords[j].directionz = (dirz+dirsz) ;/// new_direction vector;  // VL
+			
 			// OV
 			this.mapCoords[j].directionx = (dirx+dirsx) / new_speed;  
 			this.mapCoords[j].directiony = (diry+dirsy) / new_speed;  
 			this.mapCoords[j].directionz = (dirz+dirsz) / new_speed;  
 	
 			// RVL
-			/*
-			sx = sx + dispx ;// VL //*Math.sin((this.totalelapsed/100.0)) + sx%30*speedx*Math.cos(sx/j%20.0)/6 ;
-			sy = sy + dispy ;// VL //*Math.sin(sy/(2*j%10.0) +(this.totalelapsed/170.0)) + sy%30*speedx*Math.cos(sy/j%20.0)/6;
-			sz = sz + dispz ;// VL //*Math.sin(sz/(2*j%10.0) +(this.totalelapsed/170.0)) + sz%30*speedx*Math.cos(sz/j%20.0)/6;
-			*/
+			
+			//sx = sx + dispx ;// VL //*Math.sin((this.totalelapsed/100.0)) + sx%30*speedx*Math.cos(sx/j%20.0)/6 ;
+			//sy = sy + dispy ;// VL //*Math.sin(sy/(2*j%10.0) +(this.totalelapsed/170.0)) + sy%30*speedx*Math.cos(sy/j%20.0)/6;
+			//sz = sz + dispz ;// VL //*Math.sin(sz/(2*j%10.0) +(this.totalelapsed/170.0)) + sz%30*speedx*Math.cos(sz/j%20.0)/6;
+			
 			// OV
 			sx = sx + dispx * timeBetweenCalls;
 			sy = sy + dispy * timeBetweenCalls;
@@ -1944,7 +1951,7 @@ dirsz = 0;
 	
 }
 
-export { LbMap }
+export { LbMap, MapCoord, ProjectionMapData }
 
 
 
